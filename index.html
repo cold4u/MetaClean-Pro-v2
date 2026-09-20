@@ -616,6 +616,171 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
 @media (max-width: 360px) {
   .feat-grid { grid-template-columns: 1fr; }
 }
+
+/* ══════════════════════════════════════════
+   ARCADE MODAL & CONTROLS (Turbo Drive)
+══════════════════════════════════════════ */
+.hdr-arcade-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: linear-gradient(135deg, rgba(188,140,255,0.15) 0%, rgba(86,210,224,0.15) 100%);
+  border: 1px solid rgba(188,140,255,0.35);
+  color: var(--purple);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  padding: .35rem .75rem;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.hdr-arcade-btn:hover {
+  background: linear-gradient(135deg, rgba(188,140,255,0.3) 0%, rgba(86,210,224,0.3) 100%);
+  border-color: var(--cyan);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px rgba(188,140,255,0.35);
+}
+.arcade-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+.arcade-modal.hidden {
+  display: none !important;
+}
+.arcade-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4,7,12,0.88);
+  backdrop-filter: blur(10px);
+}
+.arcade-window {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 920px;
+  height: 90vh;
+  max-height: 760px;
+  background: #090c12;
+  border: 1px solid rgba(188,140,255,0.3);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.85), 0 0 30px rgba(188,140,255,0.15);
+}
+.arcade-topbar {
+  height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #11151e;
+  border-bottom: 1px solid var(--border);
+}
+.arcade-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.arcade-pill {
+  background: linear-gradient(135deg, #ff0055, #bc8cff);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.arcade-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.arcade-act-btn {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-decoration: none;
+  background: #161b24;
+  border: 1px solid var(--border-2);
+  padding: 5px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.arcade-act-btn:hover {
+  background: #212836;
+  color: #fff;
+}
+.arcade-act-btn.close-btn {
+  color: var(--red);
+  font-weight: 800;
+  border-color: rgba(249,117,131,0.25);
+}
+.arcade-act-btn.close-btn:hover {
+  background: rgba(249,117,131,0.15);
+}
+.arcade-body {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  background: #04060a;
+  position: relative;
+}
+.arcade-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+.arcade-feat-card {
+  border-color: rgba(188,140,255,0.25) !important;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.arcade-feat-card:hover {
+  border-color: var(--purple) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(188,140,255,0.18);
+}
+.arcade-card-link {
+  display: inline-block;
+  margin-top: .75rem;
+  font-size: 12px;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--cyan);
+}
+@media (max-width: 600px) {
+  .arcade-window {
+    height: 96vh;
+    max-height: 96vh;
+    border-radius: 10px;
+  }
+  .hdr-right {
+    gap: .4rem;
+  }
+  .hdr-arcade-btn span:last-child {
+    display: none;
+  }
+  .hdr-arcade-btn {
+    padding: .35rem .55rem;
+  }
+}
 </style>
 </head>
 
@@ -646,6 +811,26 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
 ══════════════════════════════════════════ -->
 <div id="app">
 
+  <!-- CYBER ARCADE MODAL (Turbo Drive: Highway Fury) -->
+  <div id="arcadeModal" class="arcade-modal hidden" aria-hidden="true" role="dialog" aria-label="Turbo Drive Arcade">
+    <div class="arcade-backdrop" id="arcadeBackdrop"></div>
+    <div class="arcade-window">
+      <div class="arcade-topbar">
+        <div class="arcade-title">
+          <span class="arcade-pill">ARCADE</span>
+          <span>🏎️ Turbo Drive: Highway Fury [Studio Edition]</span>
+        </div>
+        <div class="arcade-actions">
+          <a href="game/index.html" target="_blank" rel="noopener noreferrer" class="arcade-act-btn" title="Open full screen in a new tab">Full Tab ↗</a>
+          <button id="closeArcadeBtn" class="arcade-act-btn close-btn" title="Close Game [Esc]">✕</button>
+        </div>
+      </div>
+      <div class="arcade-body">
+        <iframe id="arcadeIframe" src="about:blank" data-src="game/index.html" class="arcade-frame" title="Turbo Drive Arcade Game" allow="autoplay; fullscreen"></iframe>
+      </div>
+    </div>
+  </div>
+
   <!-- HEADER -->
   <header class="hdr">
     <div class="hdr-left">
@@ -655,6 +840,10 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
       </div>
     </div>
     <div class="hdr-right">
+      <button class="hdr-arcade-btn" id="openArcadeBtn" title="Play Turbo Drive: Highway Fury (Mobile & Desktop Arcade)">
+        <span aria-hidden="true">🏎️</span>
+        <span>TURBO DRIVE</span>
+      </button>
       <span class="badge-local">100% Local Sandbox</span>
       <button class="hdr-toggle" id="hdrToggle" aria-pressed="false"
               title="Toggle Cyber Extraction Mode — read detailed EXIF including GPS, hardware and camera optics">
@@ -995,6 +1184,12 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
         <div class="feat-icon" aria-hidden="true">🔒</div>
         <div class="feat-name">100% Local &amp; Private</div>
         <p class="feat-desc">Zero server contact. Every byte stays on your device. Works fully offline after first load.</p>
+      </div>
+      <div class="feat-card arcade-feat-card" id="cardLaunchGame" role="button" tabindex="0" title="Launch Turbo Drive: Highway Fury Arcade Game">
+        <div class="feat-icon" aria-hidden="true">🏎️</div>
+        <div class="feat-name">Built-in Arcade: Turbo Drive</div>
+        <p class="feat-desc">Take a break with <strong>Turbo Drive: Highway Fury</strong>! Full mobile touch controls, auto-gas cruise, unlimited rockets, and synthwave beats.</p>
+        <span class="arcade-card-link">Play Game Now ➔</span>
       </div>
     </div>
   </section>
@@ -1927,8 +2122,47 @@ self.addEventListener('fetch', e => {
 }
 
 /* ──────────────────────────────────────────
-   CONSOLE BADGE
+/* ──────────────────────────────────────────
+   ARCADE CABINET CONTROLLER (Turbo Drive)
 ────────────────────────────────────────── */
+(function setupArcade() {
+  const modal = $('arcadeModal');
+  const iframe = $('arcadeIframe');
+  const openBtn = $('openArcadeBtn');
+  const closeBtn = $('closeArcadeBtn');
+  const backdrop = $('arcadeBackdrop');
+  const cardLaunch = $('cardLaunchGame');
+
+  function open() {
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    if (iframe && iframe.getAttribute('src') === 'about:blank') {
+      iframe.src = iframe.getAttribute('data-src') || 'game/index.html';
+    }
+    document.body.style.overflow = 'hidden';
+  }
+
+  function close() {
+    if (!modal) return;
+    modal.classList.add('hidden');
+    if (iframe) {
+      iframe.src = 'about:blank';
+    }
+    document.body.style.overflow = '';
+  }
+
+  if (openBtn) openBtn.addEventListener('click', open);
+  if (cardLaunch) cardLaunch.addEventListener('click', open);
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  if (backdrop) backdrop.addEventListener('click', close);
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      close();
+    }
+  });
+})();
+
 console.log('%cMetaClean Pro v2.1 🔒','color:#00d084;font-size:14px;font-weight:bold');
 console.log('%c100% Local Sandbox — Zero server contact — All processing on-device','color:#8b949e');
 </script>
