@@ -703,6 +703,34 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
   padding: 2px 6px;
   border-radius: 4px;
 }
+.arcade-tab-bar {
+  display: inline-flex;
+  background: #090c12;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+.arcade-tab-btn {
+  background: transparent;
+  border: 0;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.arcade-tab-btn:hover {
+  color: #fff;
+}
+.arcade-tab-btn.active {
+  background: var(--bg-panel);
+  color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0,240,255,0.25);
+}
 .arcade-actions {
   display: flex;
   align-items: center;
@@ -811,22 +839,25 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
 ══════════════════════════════════════════ -->
 <div id="app">
 
-  <!-- CYBER ARCADE MODAL (Turbo Drive: Highway Fury) -->
-  <div id="arcadeModal" class="arcade-modal hidden" aria-hidden="true" role="dialog" aria-label="Turbo Drive Arcade">
+  <!-- CYBER ARCADE MODAL (Multi-Game Arcade Hub) -->
+  <div id="arcadeModal" class="arcade-modal hidden" aria-hidden="true" role="dialog" aria-label="Cyber Arcade Hub">
     <div class="arcade-backdrop" id="arcadeBackdrop"></div>
     <div class="arcade-window">
       <div class="arcade-topbar">
         <div class="arcade-title">
-          <span class="arcade-pill">ARCADE</span>
-          <span>🏎️ Turbo Drive: Highway Fury [Studio Edition]</span>
+          <span class="arcade-pill">ARCADE HUB</span>
+          <div class="arcade-tab-bar">
+            <button class="arcade-tab-btn active" id="tabArcadeTurbo" data-src="game/index.html">🏎️ Turbo Drive</button>
+            <button class="arcade-tab-btn" id="tabArcadePuzzle" data-src="puzzle/index.html">🧩 Cyber Circuit</button>
+          </div>
         </div>
         <div class="arcade-actions">
-          <a href="game/index.html" target="_blank" rel="noopener noreferrer" class="arcade-act-btn" title="Open full screen in a new tab">Full Tab ↗</a>
-          <button id="closeArcadeBtn" class="arcade-act-btn close-btn" title="Close Game [Esc]">✕</button>
+          <a id="arcadeTabLink" href="game/index.html" target="_blank" rel="noopener noreferrer" class="arcade-act-btn" title="Open full screen in a new tab">Full Tab ↗</a>
+          <button id="closeArcadeBtn" class="arcade-act-btn close-btn" title="Close Arcade [Esc]">✕</button>
         </div>
       </div>
       <div class="arcade-body">
-        <iframe id="arcadeIframe" src="about:blank" data-src="game/index.html" class="arcade-frame" title="Turbo Drive Arcade Game" allow="autoplay; fullscreen"></iframe>
+        <iframe id="arcadeIframe" src="about:blank" data-src="game/index.html" class="arcade-frame" title="Cyber Arcade Game" allow="autoplay; fullscreen"></iframe>
       </div>
     </div>
   </div>
@@ -840,9 +871,9 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
       </div>
     </div>
     <div class="hdr-right">
-      <button class="hdr-arcade-btn" id="openArcadeBtn" title="Play Turbo Drive: Highway Fury (Mobile & Desktop Arcade)">
-        <span aria-hidden="true">🏎️</span>
-        <span>TURBO DRIVE</span>
+      <button class="hdr-arcade-btn" id="openArcadeBtn" title="Play Cyber Arcade Games (Mobile & Desktop)">
+        <span aria-hidden="true">🎮</span>
+        <span>CYBER ARCADE</span>
       </button>
       <span class="badge-local">100% Local Sandbox</span>
       <button class="hdr-toggle" id="hdrToggle" aria-pressed="false"
@@ -1190,6 +1221,12 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
         <div class="feat-name">Built-in Arcade: Turbo Drive</div>
         <p class="feat-desc">Take a break with <strong>Turbo Drive: Highway Fury</strong>! Full mobile touch controls, auto-gas cruise, unlimited rockets, and synthwave beats.</p>
         <span class="arcade-card-link">Play Game Now ➔</span>
+      </div>
+      <div class="feat-card arcade-feat-card" id="cardLaunchPuzzle" role="button" tabindex="0" title="Launch Cyber Circuit Puzzle Game">
+        <div class="feat-icon" aria-hidden="true">🧩</div>
+        <div class="feat-name">Arcade: Cyber Circuit</div>
+        <p class="feat-desc">Route glowing neon data lines across 30 progressive levels! Full mobile touch dragging, firewall blocks, star ratings, and infinite procedural mode.</p>
+        <span class="arcade-card-link">Play Puzzle Now ➔</span>
       </div>
     </div>
   </section>
@@ -2122,8 +2159,7 @@ self.addEventListener('fetch', e => {
 }
 
 /* ──────────────────────────────────────────
-/* ──────────────────────────────────────────
-   ARCADE CABINET CONTROLLER (Turbo Drive)
+   ARCADE CABINET CONTROLLER (Turbo Drive & Cyber Circuit)
 ────────────────────────────────────────── */
 (function setupArcade() {
   const modal = $('arcadeModal');
@@ -2132,13 +2168,26 @@ self.addEventListener('fetch', e => {
   const closeBtn = $('closeArcadeBtn');
   const backdrop = $('arcadeBackdrop');
   const cardLaunch = $('cardLaunchGame');
+  const cardLaunchPuzzle = $('cardLaunchPuzzle');
+  const tabTurbo = $('tabArcadeTurbo');
+  const tabPuzzle = $('tabArcadePuzzle');
+  const tabLink = $('arcadeTabLink');
 
-  function open() {
+  let currentGame = 'game/index.html';
+
+  function switchGame(url) {
+    currentGame = url;
+    if (iframe) iframe.src = url;
+    if (tabLink) tabLink.href = url;
+    if (tabTurbo) tabTurbo.classList.toggle('active', url.includes('game'));
+    if (tabPuzzle) tabPuzzle.classList.toggle('active', url.includes('puzzle'));
+  }
+
+  function open(gameUrl) {
     if (!modal) return;
     modal.classList.remove('hidden');
-    if (iframe && iframe.getAttribute('src') === 'about:blank') {
-      iframe.src = iframe.getAttribute('data-src') || 'game/index.html';
-    }
+    const target = gameUrl || currentGame;
+    switchGame(target);
     document.body.style.overflow = 'hidden';
   }
 
@@ -2151,10 +2200,14 @@ self.addEventListener('fetch', e => {
     document.body.style.overflow = '';
   }
 
-  if (openBtn) openBtn.addEventListener('click', open);
-  if (cardLaunch) cardLaunch.addEventListener('click', open);
+  if (openBtn) openBtn.addEventListener('click', () => open());
+  if (cardLaunch) cardLaunch.addEventListener('click', () => open('game/index.html'));
+  if (cardLaunchPuzzle) cardLaunchPuzzle.addEventListener('click', () => open('puzzle/index.html'));
   if (closeBtn) closeBtn.addEventListener('click', close);
   if (backdrop) backdrop.addEventListener('click', close);
+
+  if (tabTurbo) tabTurbo.addEventListener('click', () => switchGame('game/index.html'));
+  if (tabPuzzle) tabPuzzle.addEventListener('click', () => switchGame('puzzle/index.html'));
 
   window.addEventListener('keydown', e => {
     if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
