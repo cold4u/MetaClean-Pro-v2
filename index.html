@@ -763,13 +763,16 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
   background: rgba(249,117,131,0.15);
 }
 .arcade-body {
-  flex: 1;
+  flex: 1 1 0%;
+  min-height: 0;
   width: 100%;
-  height: 100%;
   background: #04060a;
   position: relative;
 }
 .arcade-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   border: none;
@@ -2177,10 +2180,12 @@ self.addEventListener('fetch', e => {
 
   function switchGame(url) {
     currentGame = url;
-    if (iframe) iframe.src = url;
-    if (tabLink) tabLink.href = url;
-    if (tabTurbo) tabTurbo.classList.toggle('active', url.includes('game'));
-    if (tabPuzzle) tabPuzzle.classList.toggle('active', url.includes('puzzle'));
+    const cleanUrl = url.split('?')[0];
+    const cacheBusted = cleanUrl + '?t=' + Date.now();
+    if (iframe) iframe.src = cacheBusted;
+    if (tabLink) tabLink.href = cleanUrl;
+    if (tabTurbo) tabTurbo.classList.toggle('active', cleanUrl.includes('game'));
+    if (tabPuzzle) tabPuzzle.classList.toggle('active', cleanUrl.includes('puzzle'));
   }
 
   function open(gameUrl) {
