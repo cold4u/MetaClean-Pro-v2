@@ -800,12 +800,17 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
   font-weight: 700;
   color: var(--cyan);
 }
+@media (max-width: 720px) {
+  .arcade-modal { padding: 6px; }
+  .arcade-window { height: 96vh; max-height: 96vh; border-radius: 12px; }
+  .arcade-topbar { height: auto; padding: 8px 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .arcade-pill { display: none; }
+  .arcade-title { order: 2; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .arcade-tab-bar { display: flex; width: 100%; overflow-x: auto; padding: 2px; white-space: nowrap; }
+  .arcade-tab-btn { flex-shrink: 0; font-size: 11px; padding: 5px 8px; }
+  .arcade-actions { order: 1; width: 100%; display: flex; justify-content: space-between; padding-bottom: 2px; }
+}
 @media (max-width: 600px) {
-  .arcade-window {
-    height: 96vh;
-    max-height: 96vh;
-    border-radius: 10px;
-  }
   .hdr-right {
     gap: .4rem;
   }
