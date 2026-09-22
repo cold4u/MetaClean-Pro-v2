@@ -863,6 +863,11 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
             <button class="arcade-tab-btn" id="tabArcadePuzzle" data-src="puzzle/index.html">🧩 Cyber Circuit</button>
             <button class="arcade-tab-btn" id="tabArcadeBreaker" data-src="breaker/index.html">🧱 Neon Breaker</button>
             <button class="arcade-tab-btn" id="tabArcadeStrike" data-src="strike/index.html">🚀 Cyber Strike</button>
+            <button class="arcade-tab-btn" id="tabArcadeSnake" data-src="snake/index.html">🐍 Neon Snake</button>
+            <button class="arcade-tab-btn" id="tabArcadeJump" data-src="jump/index.html">🦘 Quantum Jump</button>
+            <button class="arcade-tab-btn" id="tabArcadePulse" data-src="pulse/index.html">🎵 Cyber Pulse</button>
+            <button class="arcade-tab-btn" id="tabArcadeRunner" data-src="runner/index.html">⚡ Gravity Runner</button>
+            <button class="arcade-tab-btn" id="tabArcadeDefense" data-src="defense/index.html">🛡️ Neon Defense</button>
           </div>
         </div>
         <div class="arcade-actions">
@@ -1253,6 +1258,36 @@ footer { padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: 1.5
         <div class="feat-name">Arcade: Cyber Strike</div>
         <p class="feat-desc">Adrenaline-fueled space bullet storm! Smooth touch-drag flight, 4-tier weapon spreads, screen-clearing EMP bombs, and giant Dreadnoughts.</p>
         <span class="arcade-card-link">Play Strike Now ➔</span>
+      </div>
+      <div class="feat-card arcade-feat-card" id="cardLaunchSnake" role="button" tabindex="0" title="Launch Neon Snake: Cyber Glitch">
+        <div class="feat-icon" aria-hidden="true">🐍</div>
+        <div class="feat-name">Arcade: Neon Snake</div>
+        <p class="feat-desc">Cyberpunk grid snake with wrap-around portals, glitch obstacles, ghost phase mode, and EMP blasts!</p>
+        <span class="arcade-card-link">Play Snake Now ➔</span>
+      </div>
+      <div class="feat-card arcade-feat-card" id="cardLaunchJump" role="button" tabindex="0" title="Launch Quantum Jump: Cyber Tower">
+        <div class="feat-icon" aria-hidden="true">🦘</div>
+        <div class="feat-name">Arcade: Quantum Jump</div>
+        <p class="feat-desc">Vertical cyber spire ascent with spring pads, crumbling platforms, plasma jetpacks, and sentinel drones.</p>
+        <span class="arcade-card-link">Play Jump Now ➔</span>
+      </div>
+      <div class="feat-card arcade-feat-card" id="cardLaunchPulse" role="button" tabindex="0" title="Launch Cyber Pulse: Rhythm Matrix">
+        <div class="feat-icon" aria-hidden="true">🎵</div>
+        <div class="feat-name">Arcade: Cyber Pulse</div>
+        <p class="feat-desc">4-lane synthwave rhythm matrix tapper with procedural algorithmic beats, streak multipliers, and feedback sparks.</p>
+        <span class="arcade-card-link">Play Pulse Now ➔</span>
+      </div>
+      <div class="feat-card arcade-feat-card" id="cardLaunchRunner" role="button" tabindex="0" title="Launch Gravity Runner: Quantum Flip">
+        <div class="feat-icon" aria-hidden="true">⚡</div>
+        <div class="feat-name">Arcade: Gravity Runner</div>
+        <p class="feat-desc">High-speed quantum gravity flipping between floor and ceiling, dodging laser barriers and rotating sawblades.</p>
+        <span class="arcade-card-link">Play Runner Now ➔</span>
+      </div>
+      <div class="feat-card arcade-feat-card" id="cardLaunchDefense" role="button" tabindex="0" title="Launch Neon Defense: Mainframe Turret">
+        <div class="feat-icon" aria-hidden="true">🛡️</div>
+        <div class="feat-name">Arcade: Neon Defense</div>
+        <p class="feat-desc">360° radial mainframe turret defender! Rotate, fire plasma spreads, and detonate EMP shockwaves to save the core.</p>
+        <span class="arcade-card-link">Play Defense Now ➔</span>
       </div>
     </div>
   </section>
@@ -2185,7 +2220,7 @@ self.addEventListener('fetch', e => {
 }
 
 /* ──────────────────────────────────────────
-   ARCADE CABINET CONTROLLER (Turbo Drive, Cyber Circuit, Neon Breaker, Cyber Strike)
+   ARCADE CABINET CONTROLLER (9-Game Cyber Cabinet)
 ────────────────────────────────────────── */
 (function setupArcade() {
   const modal = $('arcadeModal');
@@ -2193,15 +2228,31 @@ self.addEventListener('fetch', e => {
   const openBtn = $('openArcadeBtn');
   const closeBtn = $('closeArcadeBtn');
   const backdrop = $('arcadeBackdrop');
-  const cardLaunch = $('cardLaunchGame');
-  const cardLaunchPuzzle = $('cardLaunchPuzzle');
-  const cardLaunchBreaker = $('cardLaunchBreaker');
-  const cardLaunchStrike = $('cardLaunchStrike');
-  const tabTurbo = $('tabArcadeTurbo');
-  const tabPuzzle = $('tabArcadePuzzle');
-  const tabBreaker = $('tabArcadeBreaker');
-  const tabStrike = $('tabArcadeStrike');
   const tabLink = $('arcadeTabLink');
+
+  const tabs = {
+    turbo: $('tabArcadeTurbo'),
+    puzzle: $('tabArcadePuzzle'),
+    breaker: $('tabArcadeBreaker'),
+    strike: $('tabArcadeStrike'),
+    snake: $('tabArcadeSnake'),
+    jump: $('tabArcadeJump'),
+    pulse: $('tabArcadePulse'),
+    runner: $('tabArcadeRunner'),
+    defense: $('tabArcadeDefense')
+  };
+
+  const cards = {
+    turbo: $('cardLaunchGame'),
+    puzzle: $('cardLaunchPuzzle'),
+    breaker: $('cardLaunchBreaker'),
+    strike: $('cardLaunchStrike'),
+    snake: $('cardLaunchSnake'),
+    jump: $('cardLaunchJump'),
+    pulse: $('cardLaunchPulse'),
+    runner: $('cardLaunchRunner'),
+    defense: $('cardLaunchDefense')
+  };
 
   let currentGame = 'game/index.html';
 
@@ -2211,10 +2262,16 @@ self.addEventListener('fetch', e => {
     const cacheBusted = cleanUrl + '?t=' + Date.now();
     if (iframe) iframe.src = cacheBusted;
     if (tabLink) tabLink.href = cleanUrl;
-    if (tabTurbo) tabTurbo.classList.toggle('active', cleanUrl.includes('game'));
-    if (tabPuzzle) tabPuzzle.classList.toggle('active', cleanUrl.includes('puzzle'));
-    if (tabBreaker) tabBreaker.classList.toggle('active', cleanUrl.includes('breaker'));
-    if (tabStrike) tabStrike.classList.toggle('active', cleanUrl.includes('strike'));
+    
+    if (tabs.turbo) tabs.turbo.classList.toggle('active', cleanUrl.includes('game'));
+    if (tabs.puzzle) tabs.puzzle.classList.toggle('active', cleanUrl.includes('puzzle'));
+    if (tabs.breaker) tabs.breaker.classList.toggle('active', cleanUrl.includes('breaker'));
+    if (tabs.strike) tabs.strike.classList.toggle('active', cleanUrl.includes('strike'));
+    if (tabs.snake) tabs.snake.classList.toggle('active', cleanUrl.includes('snake'));
+    if (tabs.jump) tabs.jump.classList.toggle('active', cleanUrl.includes('jump'));
+    if (tabs.pulse) tabs.pulse.classList.toggle('active', cleanUrl.includes('pulse'));
+    if (tabs.runner) tabs.runner.classList.toggle('active', cleanUrl.includes('runner'));
+    if (tabs.defense) tabs.defense.classList.toggle('active', cleanUrl.includes('defense'));
   }
 
   function open(gameUrl) {
@@ -2235,17 +2292,30 @@ self.addEventListener('fetch', e => {
   }
 
   if (openBtn) openBtn.addEventListener('click', () => open());
-  if (cardLaunch) cardLaunch.addEventListener('click', () => open('game/index.html'));
-  if (cardLaunchPuzzle) cardLaunchPuzzle.addEventListener('click', () => open('puzzle/index.html'));
-  if (cardLaunchBreaker) cardLaunchBreaker.addEventListener('click', () => open('breaker/index.html'));
-  if (cardLaunchStrike) cardLaunchStrike.addEventListener('click', () => open('strike/index.html'));
   if (closeBtn) closeBtn.addEventListener('click', close);
   if (backdrop) backdrop.addEventListener('click', close);
 
-  if (tabTurbo) tabTurbo.addEventListener('click', () => switchGame('game/index.html'));
-  if (tabPuzzle) tabPuzzle.addEventListener('click', () => switchGame('puzzle/index.html'));
-  if (tabBreaker) tabBreaker.addEventListener('click', () => switchGame('breaker/index.html'));
-  if (tabStrike) tabStrike.addEventListener('click', () => switchGame('strike/index.html'));
+  // Tab bindings
+  if (tabs.turbo) tabs.turbo.addEventListener('click', () => switchGame('game/index.html'));
+  if (tabs.puzzle) tabs.puzzle.addEventListener('click', () => switchGame('puzzle/index.html'));
+  if (tabs.breaker) tabs.breaker.addEventListener('click', () => switchGame('breaker/index.html'));
+  if (tabs.strike) tabs.strike.addEventListener('click', () => switchGame('strike/index.html'));
+  if (tabs.snake) tabs.snake.addEventListener('click', () => switchGame('snake/index.html'));
+  if (tabs.jump) tabs.jump.addEventListener('click', () => switchGame('jump/index.html'));
+  if (tabs.pulse) tabs.pulse.addEventListener('click', () => switchGame('pulse/index.html'));
+  if (tabs.runner) tabs.runner.addEventListener('click', () => switchGame('runner/index.html'));
+  if (tabs.defense) tabs.defense.addEventListener('click', () => switchGame('defense/index.html'));
+
+  // Card bindings
+  if (cards.turbo) cards.turbo.addEventListener('click', () => open('game/index.html'));
+  if (cards.puzzle) cards.puzzle.addEventListener('click', () => open('puzzle/index.html'));
+  if (cards.breaker) cards.breaker.addEventListener('click', () => open('breaker/index.html'));
+  if (cards.strike) cards.strike.addEventListener('click', () => open('strike/index.html'));
+  if (cards.snake) cards.snake.addEventListener('click', () => open('snake/index.html'));
+  if (cards.jump) cards.jump.addEventListener('click', () => open('jump/index.html'));
+  if (cards.pulse) cards.pulse.addEventListener('click', () => open('pulse/index.html'));
+  if (cards.runner) cards.runner.addEventListener('click', () => open('runner/index.html'));
+  if (cards.defense) cards.defense.addEventListener('click', () => open('defense/index.html'));
 
   window.addEventListener('keydown', e => {
     if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
