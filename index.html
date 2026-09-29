@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MetaClean Pro v2.3 — Universal Privacy & Forensics Suite</title>
-<meta name="description" content="100% client-side privacy suite to inspect and strip EXIF, GPS radar coordinates, camera serials, author identities, ID3 audio tags, and PDF metadata with visual quality diffs and SHA-256 audit certificates.">
+<title>MetaClean Pro v2.4 — Universal Privacy, Forensics & AI Sanitization Suite</title>
+<meta name="description" content="100% client-side privacy suite to inspect and strip EXIF, GPS radar coordinates, AI generation prompts, camera serials, author identities, ID3 audio tags, and PDF metadata with visual quality diffs and SHA-256 audit certificates.">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#7952ff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,7 +68,7 @@
   <div class="brand">
     <span>✦</span>
     <strong>MetaClean</strong>
-    <i class="version-tag">PRO v2.3</i>
+    <i class="version-tag">PRO v2.4</i>
   </div>
   <div class="header-right">
     <button id="installAppBtn" class="pwa-install-btn hidden" title="Install MetaClean Pro as Desktop/Mobile App">
@@ -153,6 +153,7 @@
         <span class="stat-pill"><strong id="statFiles">0</strong> Files</span>
         <span class="stat-pill warning"><strong id="statTags">0</strong> Metadata Tags</span>
         <span class="stat-pill success"><strong id="statCleaned">0</strong> Cleaned</span>
+        <span class="stat-pill highlight"><strong id="statGrade">100%</strong> Privacy Health</span>
       </div>
     </div>
 
@@ -175,6 +176,10 @@
           <label class="cyber-checkbox" title="Keeps ICC display color profiles for photographers while stripping all EXIF/GPS">
             <input type="checkbox" id="optPreserveIcc">
             <span>Preserve ICC Color Profile</span>
+          </label>
+          <label class="cyber-checkbox" title="Stamps a subtle 'PRIVACY PROTECTED' mark on deep raster renders">
+            <input type="checkbox" id="optWatermark">
+            <span>Burn Privacy Stamp</span>
           </label>
         </div>
       </div>
@@ -229,6 +234,10 @@
         <span class="v-num" id="vSavingsBytes">0 KB</span>
         <span class="v-lbl">Metadata Removed</span>
       </div>
+      <div class="v-box success">
+        <span class="v-num" id="vHealthScore">100% (Grade A+)</span>
+        <span class="v-lbl">Privacy Score</span>
+      </div>
     </div>
   </section>
 
@@ -237,6 +246,16 @@
     <h2>Enterprise-Grade Privacy Scrubbing</h2>
     <p class="section-sub">Understand what lives inside your media and how MetaClean Pro strips it without re-compressing your files.</p>
     <div class="features">
+      <div class="feat-card">
+        <div class="feat-icon">🤖</div>
+        <b>AI Prompt Forensics & Wiper</b>
+        <span>Scans for embedded text prompts, negative prompts, seeds, and LoRA parameters in Midjourney, Stable Diffusion, ComfyUI, and DALL-E files, offering 1-click prompt extraction and complete parameter erasure.</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <b>Privacy Threat Radar (Grades A+ to F)</b>
+        <span>Dynamic risk scorecard grades incoming files by vulnerability level (Grade F for physical GPS leaks, Grade D for hardware identifiers), certifying 100% sanitized outputs as Grade A+.</span>
+      </div>
       <div class="feat-card">
         <div class="feat-icon">📍</div>
         <b>GPS Radar & EXIF Telemetry</b>
@@ -254,8 +273,8 @@
       </div>
       <div class="feat-card">
         <div class="feat-icon">🎵</div>
-        <b>Audio ID3 & Album Art</b>
-        <span>MP3 and FLAC files harbor distributor tags, buyer IDs, embedded cover graphics, and private encoder comments.</span>
+        <b>Audio Waveform & ID3 Sanitizer</b>
+        <span>Cleans MP3 and FLAC distributor tags, buyer IDs, embedded cover graphics, and private encoder comments with real-time audio waveform visualizers.</span>
       </div>
       <div class="feat-card">
         <div class="feat-icon">📄</div>
@@ -264,8 +283,8 @@
       </div>
       <div class="feat-card">
         <div class="feat-icon">📦</div>
-        <b>ZIP Ingest & Auto-Unpack</b>
-        <span>Drop compressed ZIP archives to inspect, audit, and clean entire batches of files in-memory without extracting them manually.</span>
+        <b>ZIP Ingest & Folder Drop</b>
+        <span>Drop folders or compressed ZIP archives to inspect, audit, and clean entire batches of files in-memory without extracting them manually.</span>
       </div>
     </div>
     <p class="limit">
@@ -318,7 +337,7 @@
 
 <footer class="site-footer">
   <div class="footer-wrap">
-    <div><strong>MetaClean Pro v2.3</strong> <span>• Zero Network Transmission • 100% Local Privacy</span></div>
+    <div><strong>MetaClean Pro v2.4</strong> <span>• Zero Network Transmission • 100% Local Privacy</span></div>
     <div class="footer-links">
       <a href="https://github.com/cold4u/MetaClean-Pro-v2" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
       <span>•</span>

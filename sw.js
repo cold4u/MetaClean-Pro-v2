@@ -1,7 +1,7 @@
 /**
- * MetaClean Pro v2.3 — Offline Service Worker
+ * MetaClean Pro v2.4 — Offline Service Worker
  */
-const CACHE_NAME = 'metaclean-pro-v2.3';
+const CACHE_NAME = 'metaclean-pro-v2.4';
 const ASSETS = [
   './',
   './index.html',

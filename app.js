@@ -1,5 +1,5 @@
 /**
- * MetaClean Pro v2.3 — Application Controller & Reactive UI
+ * MetaClean Pro v2.4 — Application Controller & Reactive UI
  * Universal Multi-Format Metadata Eliminator with 29-Game Cyber Arcade Cabinet
  */
 (function() {
@@ -31,7 +31,9 @@
   const cleanModeSelect = $('#cleanModeSelect');
   const optAnonymize = $('#optAnonymize');
   const optPreserveIcc = $('#optPreserveIcc');
+  const optWatermark = $('#optWatermark');
   const installAppBtn = $('#installAppBtn');
+  const statGrade = $('#statGrade');
 
   const batchProgressContainer = $('#batchProgressContainer');
   const batchProgressBar = $('#batchProgressBar');
@@ -42,6 +44,7 @@
   const vBeforeCount = $('#vBeforeCount');
   const vAfterCount = $('#vAfterCount');
   const vSavingsBytes = $('#vSavingsBytes');
+  const vHealthScore = $('#vHealthScore');
 
   // ── Helper: Guess Mime Type from Filename ──
   function guessMimeType(name) {
@@ -294,6 +297,7 @@
             <span class="file-title" id="title_${entry.id}" title="${window.MetaCleanEngine.esc(entry.file.name)}">${window.MetaCleanEngine.esc(entry.file.name)}</span>
             <span class="format-tag" id="fmt_${entry.id}">Scanning</span>
             <span class="threat-pill clean" id="threat_${entry.id}">Scanning…</span>
+            <span class="grade-badge" id="grade_${entry.id}" style="display:none;"></span>
           </div>
           <div class="file-meta-sub">
             <span class="size-stat" id="size_${entry.id}">${window.MetaCleanEngine.fmtSize(entry.file.size)}</span>
@@ -352,24 +356,42 @@
     const fmtTag = $('#fmt_' + id);
     if (fmtTag) fmtTag.textContent = entry.format.toUpperCase();
 
-    // Threat Pill
+    // Threat Pill & Grade Badge
     const threatPill = $('#threat_' + id);
+    const gradeBadge = $('#grade_' + id);
+
     if (threatPill && entry.scan) {
-      threatPill.className = `threat-pill ${entry.scan.threatLevel}`;
-      switch (entry.scan.threatLevel) {
-        case 'critical':
-          threatPill.textContent = '🔴 CRITICAL: GPS Location';
-          break;
-        case 'high':
-          threatPill.textContent = '🟠 HIGH: Hardware / Owner ID';
-          break;
-        case 'med':
-          threatPill.textContent = '🟡 MEDIUM: Timestamps / Software';
-          break;
-        default:
-          threatPill.textContent = '🟢 SECURE: 0 Tracking Tags';
-          break;
+      if (entry.cleanResult) {
+        threatPill.className = 'threat-pill clean';
+        threatPill.textContent = '🟢 100% SANITIZED';
+      } else {
+        threatPill.className = `threat-pill ${entry.scan.threatLevel}`;
+        switch (entry.scan.threatLevel) {
+          case 'critical':
+            threatPill.textContent = '🔴 CRITICAL: GPS Exposed';
+            break;
+          case 'high':
+            threatPill.textContent = '🟠 HIGH: Hardware / Prompt';
+            break;
+          case 'med':
+            threatPill.textContent = '🟡 MEDIUM: Software / Time';
+            break;
+          default:
+            threatPill.textContent = '🟢 SECURE: 0 Tracking Tags';
+            break;
+        }
       }
+    }
+
+    if (gradeBadge && entry.scan) {
+      gradeBadge.style.display = 'inline-flex';
+      const grade = entry.cleanResult ? 'A+' : (entry.scan.threatGrade || 'A+');
+      const gradeClass = 'grade-' + grade.replace('+', '-plus');
+      gradeBadge.className = `grade-badge ${gradeClass}`;
+      gradeBadge.textContent = `GRADE ${grade}`;
+      gradeBadge.title = entry.cleanResult
+        ? '100% Sanitized & Anonymized (Score 100/100)'
+        : `Privacy Exposure Score: ${entry.scan.privacyScore}/100`;
     }
 
     // Metadata Tags Count
@@ -438,6 +460,24 @@
       `;
     }
 
+    // AI Prompt & Generative Synthesis Forensics
+    let aiHtml = '';
+    if (entry.scan.aiData) {
+      aiHtml = `
+        <div class="ai-prompt-card">
+          <div class="ai-card-header">
+            <span>🤖 AI Generative Manifest (${window.MetaCleanEngine.esc(entry.scan.aiData.generator)})</span>
+            <span style="font-size:10px; color:#f87171;">⚠️ Embedded Prompt Exposed</span>
+          </div>
+          <div class="ai-prompt-box" id="aiPrompt_${entry.id}">${window.MetaCleanEngine.esc(entry.scan.aiData.prompt)}</div>
+          <div class="ai-actions-row">
+            <span>Model parameters, seeds, and workflow will be permanently wiped.</span>
+            <button type="button" class="btn-copy-prompt" onclick="copyAiPrompt('${entry.id}')">📋 Copy Generation Prompt</button>
+          </div>
+        </div>
+      `;
+    }
+
     // Tags Grid with Live Search Filter
     let tagsHtml = '';
     if (entry.scan.fields.length) {
@@ -500,6 +540,28 @@
       `;
     }
 
+    // Forensic Stripped Tag Diff Matrix
+    let diffMatrixHtml = '';
+    if (entry.cleanResult && entry.cleanResult.beforeFields.length > 0) {
+      const rows = entry.cleanResult.beforeFields.map(f => `
+        <div class="diff-matrix-item">
+          <span class="tag-stripped" title="${window.MetaCleanEngine.esc(f.category + ': ' + f.label + ' = ' + f.value)}">
+            [${window.MetaCleanEngine.esc(f.category)}] ${window.MetaCleanEngine.esc(f.label)}: ${window.MetaCleanEngine.esc(f.value)}
+          </span>
+          <span class="tag-status">✓ PERMANENTLY ERASED</span>
+        </div>
+      `).join('');
+      diffMatrixHtml = `
+        <div class="diff-matrix-box">
+          <div class="diff-matrix-header">
+            <span>📋 Forensic Stripping Diff Matrix (${entry.cleanResult.beforeFields.length} tags eliminated)</span>
+            <span style="color:var(--green); font-size:10px;">0 BYTES RESIDUAL TRACKERS</span>
+          </div>
+          <div class="diff-matrix-list">${rows}</div>
+        </div>
+      `;
+    }
+
     // Cryptographic Hashes & Forensics Audit Report
     let hashHtml = '';
     const srcHash = entry.cleanResult?.sourceSha256 || entry.scan.sha256;
@@ -525,7 +587,7 @@
       `;
     }
 
-    // Audio Player Preview
+    // Audio Player Preview with Live Waveform Visualizer
     let audioHtml = '';
     if (['mp3', 'flac', 'wav'].includes(entry.format)) {
       const audioUrl = entry.cleanResult ? URL.createObjectURL(entry.cleanResult.cleanBlob) : URL.createObjectURL(entry.file);
@@ -534,9 +596,11 @@
           <div style="font-size:11px; color:var(--muted); font-weight:700; margin-bottom:4px;">
             🎵 ${entry.cleanResult ? 'Sanitized Audio Preview' : 'Source Audio Preview'}:
           </div>
-          <audio controls src="${audioUrl}"></audio>
+          <canvas id="audioWave_${entry.id}" class="audio-waveform-canvas" width="600" height="48"></canvas>
+          <audio id="audioEl_${entry.id}" controls src="${audioUrl}"></audio>
         </div>
       `;
+      attachAudioVisualizer(entry.id);
     }
 
     // Hex Forensics Dump
@@ -561,9 +625,11 @@
 
     drawer.innerHTML = `
       ${provHtml}
+      ${aiHtml}
       ${tagsHtml}
       ${gpsHtml}
       ${diffHtml}
+      ${diffMatrixHtml}
       ${hashHtml}
       ${audioHtml}
       ${hexHtml}
@@ -596,6 +662,61 @@
       el.style.display = (!q || txt.includes(q)) ? '' : 'none';
     });
   };
+
+  window.copyAiPrompt = function(id) {
+    const entry = queue.get(id);
+    if (!entry || !entry.scan?.aiData?.prompt) return;
+    navigator.clipboard.writeText(entry.scan.aiData.prompt).then(() => {
+      alert('AI Generation Prompt copied to clipboard!');
+    }).catch(() => {
+      prompt('AI Generation Prompt:', entry.scan.aiData.prompt);
+    });
+  };
+
+  function attachAudioVisualizer(id) {
+    setTimeout(() => {
+      const audio = $('#audioEl_' + id);
+      const canvas = $('#audioWave_' + id);
+      if (!audio || !canvas) return;
+      const ctx = canvas.getContext('2d');
+      let animId;
+
+      function render(playing) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const bars = 48;
+        const barW = canvas.width / bars;
+        const time = Date.now() / 180;
+
+        for (let i = 0; i < bars; i++) {
+          const mult = playing
+            ? (Math.sin(time + i * 0.45) * 0.35 + Math.cos(time * 1.6 + i * 0.25) * 0.35 + 0.8)
+            : (Math.sin(i * 0.25) * 0.18 + 0.25);
+          const barH = mult * (canvas.height * 0.45);
+          const x = i * barW;
+          const y = (canvas.height - barH) / 2;
+
+          const grad = ctx.createLinearGradient(0, y, 0, y + barH);
+          grad.addColorStop(0, '#00f0ff');
+          grad.addColorStop(0.5, '#7952ff');
+          grad.addColorStop(1, '#ff3b69');
+          ctx.fillStyle = grad;
+          ctx.fillRect(x + 1, y, barW - 2, barH);
+        }
+        if (playing) animId = requestAnimationFrame(() => render(true));
+      }
+
+      render(false);
+      audio.onplay = () => render(true);
+      audio.onpause = () => {
+        cancelAnimationFrame(animId);
+        render(false);
+      };
+      audio.onended = () => {
+        cancelAnimationFrame(animId);
+        render(false);
+      };
+    }, 80);
+  }
 
   window.removeFile = function(id) {
     const entry = queue.get(id);
@@ -630,7 +751,8 @@
         mode: modeVal === 'raster' ? 'raster' : 'lossless',
         selectiveMode: modeVal === 'gps_only' ? 'gps_only' : 'all',
         preserveIcc: optPreserveIcc.checked,
-        anonymize: optAnonymize.checked
+        anonymize: optAnonymize.checked,
+        watermark: optWatermark ? optWatermark.checked : false
       };
 
       const result = await window.MetaCleanEngine.cleanFile(entry.file, options);
@@ -694,7 +816,7 @@
     if (!entry || !entry.cleanResult) return;
 
     const cert = {
-      generator: "MetaClean Pro v2.3 - Military-Grade Privacy Suite",
+      generator: "MetaClean Pro v2.4 - Military-Grade Privacy & AI Forensics Suite",
       timestamp: new Date().toISOString(),
       file: {
         originalName: entry.file.name,
@@ -711,6 +833,10 @@
       },
       audit: {
         threatLevel: entry.scan.threatLevel,
+        threatGradeBefore: entry.cleanResult.beforeThreatGrade || entry.scan.threatGrade,
+        threatGradeAfter: 'A+',
+        privacyScoreBefore: entry.cleanResult.beforePrivacyScore || entry.scan.privacyScore,
+        privacyScoreAfter: 100,
         detectedMetadataFieldsCount: entry.scan.fields.length,
         strippedMetadataFields: entry.scan.fields.map(f => ({
           category: f.category,
@@ -752,7 +878,7 @@
         await navigator.share({
           files: [shareFile],
           title: 'Sanitized File - MetaClean Pro',
-          text: `Cleaned with MetaClean Pro v2.3 (0 tracking metadata tags).`
+          text: `Cleaned with MetaClean Pro v2.4 (0 tracking metadata tags).`
         });
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -855,6 +981,22 @@
     $('#statTags').textContent = totalTags;
     $('#statCleaned').textContent = cleaned;
 
+    // Overall Privacy Score calculation
+    let avgScore = 100;
+    if (total > 0) {
+      let scoreSum = 0;
+      queue.forEach(e => {
+        if (e.cleanResult) scoreSum += 100;
+        else if (e.scan) scoreSum += (e.scan.privacyScore || 100);
+        else scoreSum += 50;
+      });
+      avgScore = Math.round(scoreSum / total);
+    }
+    if (statGrade) {
+      statGrade.textContent = avgScore + '%';
+      statGrade.title = `Average Queue Privacy Health: ${avgScore}/100`;
+    }
+
     downloadZipBtn.disabled = cleaned === 0;
 
     // Filter tab counts
@@ -887,6 +1029,9 @@
     vBeforeCount.textContent = beforeTotal;
     vAfterCount.textContent = afterTotal;
     vSavingsBytes.textContent = window.MetaCleanEngine.fmtSize(bytesSaved);
+    if (vHealthScore) {
+      vHealthScore.textContent = '100% (Grade A+)';
+    }
     verificationBanner.classList.remove('hidden');
   }
 

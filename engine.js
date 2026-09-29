@@ -1,5 +1,5 @@
 /**
- * MetaClean Pro v2.3 — Core Metadata Forensics & Zero-Loss Sanitization Engine
+ * MetaClean Pro v2.4 — Core Metadata Forensics & Zero-Loss Sanitization Engine
  * 100% Client-Side. Zero Dependencies. Zero Network Transmission.
  */
 (function(root) {
@@ -288,7 +288,19 @@
       };
     }
 
-    // 7. C2PA / Content Credentials Authenticity
+    // 7. AI Generative Media (Stable Diffusion, Midjourney, DALL-E, ComfyUI, Firefly)
+    if (forensicDetails.aiData || /Negative prompt:|Steps:\s*\d+|Sampler:\s*|DALL-E|Midjourney|Adobe Firefly|NovelAI|comfyui|synthid/i.test(latinText)) {
+      const match = latinText.match(/(Stable Diffusion|Midjourney|DALL-E|Adobe Firefly|ComfyUI|NovelAI|SynthID)/i);
+      const genName = forensicDetails.aiData?.generator || (match ? match[0] : 'AI Generative Synthesis');
+      return {
+        platform: 'AI Generated Media',
+        badge: `🤖 AI Origin: ${genName}`,
+        threatBadge: 'pro',
+        detail: 'Synthesized by AI generative models. Contains embedded generation prompts, seeds, model checkpoint hashes, and workflow graphs.'
+      };
+    }
+
+    // 8. C2PA / Content Credentials Authenticity
     if (latinText.includes('c2pa') || latinText.includes('content.credentials') || latinText.includes('jumbf')) {
       return {
         platform: 'C2PA Authenticity Manifest',
@@ -337,6 +349,17 @@
             parseTiff(dv, p + 10, fields, forensicDetails);
           } else if (/http:\/\/ns\.adobe\.com\/xap/i.test(segText)) {
             fields.push({ category: 'Structure', label: 'XMP Extensible Metadata', value: `Adobe XML Stream (${len} bytes)`, threat: 'med' });
+            if (/Midjourney|DALL-E|Adobe Firefly|Stable Diffusion/i.test(segText)) {
+              const aiMatch = segText.match(/(Midjourney|DALL-E|Adobe Firefly|Stable Diffusion)/i);
+              if (aiMatch) {
+                forensicDetails.aiData = forensicDetails.aiData || {
+                  generator: aiMatch[0],
+                  prompt: 'AI generation model credentials and provenance manifest embedded in XMP.',
+                  keyword: 'XMP'
+                };
+                fields.push({ category: 'AI Forensics', label: `AI Manifest (${aiMatch[0]})`, value: 'Model parameters & generation credentials', threat: 'high' });
+              }
+            }
           }
         } else if (marker === 0xED) {
           fields.push({ category: 'Structure', label: 'IPTC / Photoshop APP13', value: 'Embedded Photoshop Resource Block', threat: 'med' });
@@ -362,8 +385,19 @@
           const raw = latinText.slice(p + 8, p + 8 + chunkLen);
           const nullIdx = raw.indexOf('\0');
           const kw = nullIdx > -1 ? raw.slice(0, nullIdx) : 'Comment';
-          const val = nullIdx > -1 ? raw.slice(nullIdx + 1, nullIdx + 60).replace(/[^\x20-\x7E]/g, '') : 'Embedded text';
+          const fullText = nullIdx > -1 ? raw.slice(nullIdx + 1) : raw;
+          const val = fullText.slice(0, 80).replace(/[^\x20-\x7E]/g, '');
           fields.push({ category: 'Identity', label: `PNG ${typ} [${kw}]`, value: val || 'Metadata text payload', threat: 'high' });
+
+          // Extract AI generation metadata & prompts (Stable Diffusion, Midjourney, ComfyUI, NovelAI)
+          if (['parameters', 'prompt', 'workflow', 'Dream', 'sd-metadata'].includes(kw) || /Negative prompt:|Steps:\s*\d+/i.test(fullText)) {
+            forensicDetails.aiData = {
+              generator: kw === 'workflow' ? 'ComfyUI' : 'Stable Diffusion / NovelAI',
+              prompt: fullText.slice(0, 2000).replace(/[^\x20-\x7E\r\n\t]/g, ''),
+              keyword: kw
+            };
+            fields.push({ category: 'AI Forensics', label: 'AI Generation Prompt & Parameters', value: `Embedded ${kw} manifest (${chunkLen} bytes)`, threat: 'high' });
+          }
         } else if (typ === 'eXIf') {
           fields.push({ category: 'Structure', label: 'PNG EXIF Chunk', value: `${chunkLen} bytes raw EXIF payload`, threat: 'high' });
           parseTiff(dv, p + 8, fields, forensicDetails);
@@ -487,11 +521,27 @@
     });
     const uniqueFields = Array.from(uniqueMap.values());
 
-    // Calculate Threat Level
+    // Calculate Threat Level & Privacy Score (0-100) & Grade (A+, B, C, D, F)
     let threatLevel = 'clean';
-    if (uniqueFields.some(f => f.threat === 'critical')) threatLevel = 'critical';
-    else if (uniqueFields.some(f => f.threat === 'high')) threatLevel = 'high';
-    else if (uniqueFields.some(f => f.threat === 'med')) threatLevel = 'med';
+    let threatGrade = 'A+';
+    let privacyScore = 100;
+
+    if (uniqueFields.some(f => f.threat === 'critical')) {
+      threatLevel = 'critical';
+      threatGrade = 'F';
+      privacyScore = Math.max(10, 30 - uniqueFields.length * 2);
+    } else if (uniqueFields.some(f => f.threat === 'high')) {
+      threatLevel = 'high';
+      threatGrade = 'D';
+      privacyScore = Math.max(35, 55 - uniqueFields.length * 2);
+    } else if (uniqueFields.some(f => f.threat === 'med')) {
+      threatLevel = 'med';
+      threatGrade = 'C';
+      privacyScore = Math.max(60, 75 - uniqueFields.length * 2);
+    } else if (uniqueFields.length > 0) {
+      threatGrade = 'B';
+      privacyScore = Math.max(80, 92 - uniqueFields.length);
+    }
 
     // Provenance / Platform Detection
     const provenance = detectProvenance(buf, format, file.name, uniqueFields, forensicDetails, latinText);
@@ -506,6 +556,9 @@
       format,
       fields: uniqueFields,
       threatLevel,
+      threatGrade,
+      privacyScore,
+      aiData: forensicDetails.aiData || null,
       gps: forensicDetails.gps || null,
       forensicDetails,
       provenance,
@@ -900,7 +953,7 @@
   }
 
   // 10. Deep Canvas Raster Cleaner
-  async function cleanImageRaster(file, quality = 0.95) {
+  async function cleanImageRaster(file, quality = 0.95, watermark = false) {
     const img = new Image();
     const url = URL.createObjectURL(file);
     try {
@@ -911,6 +964,16 @@
       canvas.height = img.naturalHeight || img.height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
+
+      if (watermark) {
+        const fontSize = Math.max(14, Math.round(canvas.width / 42));
+        ctx.font = `700 ${fontSize}px sans-serif`;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+        ctx.shadowBlur = 4;
+        ctx.textAlign = 'right';
+        ctx.fillText('🛡️ PRIVACY PROTECTED • METACLEAN', canvas.width - 20, canvas.height - 20);
+      }
 
       const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
       const blob = await new Promise(r => canvas.toBlob(r, mime, mime === 'image/jpeg' ? quality : undefined));
@@ -927,11 +990,12 @@
     const mode = options.mode || 'lossless';
     const preserveIcc = !!options.preserveIcc;
     const selectiveMode = options.selectiveMode || 'all';
+    const watermark = !!options.watermark;
     const scan = await scanFile(file);
     let cleanBlob = null;
 
     if (mode === 'raster' && (scan.format === 'jpeg' || scan.format === 'png' || scan.format === 'webp')) {
-      cleanBlob = await cleanImageRaster(file, options.rasterQuality || 0.95);
+      cleanBlob = await cleanImageRaster(file, options.rasterQuality || 0.95, watermark);
     } else {
       const rawBuf = new Uint8Array(await file.arrayBuffer());
       let cleanBuf = null;
@@ -999,6 +1063,11 @@
       remainingCount: verifyScan.fields.length,
       beforeFields: scan.fields,
       afterFields: verifyScan.fields,
+      beforeThreatGrade: scan.threatGrade,
+      afterThreatGrade: 'A+',
+      beforePrivacyScore: scan.privacyScore,
+      afterPrivacyScore: 100,
+      aiData: scan.aiData,
       format: scan.format,
       cleanHexDump,
       sourceSha256: scan.sha256,

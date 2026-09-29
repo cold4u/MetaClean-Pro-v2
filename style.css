@@ -1265,5 +1265,158 @@ main {
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
 }
 
+/* ── Privacy Exposure Threat Grade Badges ── */
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+.grade-badge.grade-F {
+  background: rgba(255, 59, 105, 0.2);
+  color: #ff6b8b;
+  border: 1px solid rgba(255, 59, 105, 0.5);
+  box-shadow: 0 0 10px rgba(255, 59, 105, 0.3);
+}
+.grade-badge.grade-D {
+  background: rgba(245, 184, 48, 0.2);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 184, 48, 0.5);
+}
+.grade-badge.grade-C, .grade-badge.grade-B {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.grade-badge.grade-A-plus, .grade-badge.grade-A {
+  background: rgba(56, 226, 157, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(56, 226, 157, 0.5);
+  box-shadow: 0 0 12px rgba(56, 226, 157, 0.3);
+}
+
+/* ── AI Prompt & Generative Forensics Card ── */
+.ai-prompt-card {
+  margin-top: 12px;
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.12) 0%, rgba(59, 130, 246, 0.12) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 4px 20px rgba(147, 51, 234, 0.15);
+}
+.ai-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #c084fc;
+  margin-bottom: 8px;
+}
+.ai-prompt-box {
+  background: #080911;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 6px;
+  padding: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #e2e8f0;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  margin: 0 0 8px 0;
+}
+.ai-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--muted);
+}
+.btn-copy-prompt {
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #d8b4fe;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-copy-prompt:hover {
+  background: rgba(168, 85, 247, 0.35);
+  color: #fff;
+}
+
+/* ── Forensic Stripped Tag Diff Matrix ── */
+.diff-matrix-box {
+  margin-top: 12px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.diff-matrix-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.diff-matrix-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.diff-matrix-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #090b12;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.diff-matrix-item .tag-stripped {
+  color: #f87171;
+  text-decoration: line-through;
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 75%;
+}
+.diff-matrix-item .tag-status {
+  color: var(--green);
+  font-weight: 700;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Live Audio Waveform Canvas ── */
+.audio-waveform-canvas {
+  width: 100%;
+  height: 48px;
+  background: #080a12;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  display: block;
+}
+
+
 
 
