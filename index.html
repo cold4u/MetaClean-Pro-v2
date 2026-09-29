@@ -99,6 +99,8 @@
     <div class="drop-container">
       <label class="drop" id="drop" tabindex="0" role="button" aria-label="Drop files here or click to browse">
         <input id="fileInput" type="file" multiple accept="image/jpeg,image/png,image/webp,image/svg+xml,audio/mpeg,audio/flac,audio/wav,application/pdf,video/mp4,video/quicktime,application/zip,.jpg,.jpeg,.png,.webp,.svg,.mp3,.flac,.wav,.pdf,.mp4,.mov,.zip">
+        <input id="folderInput" type="file" webkitdirectory directory multiple style="display:none;">
+        <input id="cameraInput" type="file" accept="image/*" capture="environment" style="display:none;">
         <div class="upload-icon-box">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -106,8 +108,8 @@
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
         </div>
-        <b>Drop files or .ZIP archives here to inspect & clean</b>
-        <span>Images, Audio, Documents, Videos, or Bundled ZIPs</span>
+        <b>Drop files, directories, or .ZIP archives here</b>
+        <span>Images, Audio, Documents, Videos, Folders, or ZIP Bundles</span>
         <div class="format-chips">
           <span class="chip">JPEG</span>
           <span class="chip">PNG</span>
@@ -119,11 +121,17 @@
           <span class="chip">PDF</span>
           <span class="chip">MP4 / MOV</span>
           <span class="chip highlight">📦 ZIP ARCHIVES</span>
+          <span class="chip highlight">📂 FOLDERS</span>
         </div>
         <div class="paste-hint">
           <kbd>Ctrl</kbd> + <kbd>V</kbd> (or <kbd>⌘</kbd>+<kbd>V</kbd>) anywhere to paste clipboard screenshots
         </div>
       </label>
+      <div class="drop-action-row">
+        <button type="button" class="btn-drop-action" id="btnBrowseFiles">📄 Choose Files</button>
+        <button type="button" class="btn-drop-action" id="btnBrowseFolder">📂 Ingest Folder</button>
+        <button type="button" class="btn-drop-action camera-btn" id="btnPrivacyCam">📸 Privacy Camera</button>
+      </div>
       <div class="local-guarantee">
         🛡️ Processing occurs strictly in local WebAssembly/JS memory. Files never leave this machine.
       </div>

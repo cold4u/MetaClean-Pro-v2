@@ -18,6 +18,11 @@
   // ── Elements ──
   const dropZone = $('#drop');
   const fileInput = $('#fileInput');
+  const folderInput = $('#folderInput');
+  const cameraInput = $('#cameraInput');
+  const btnBrowseFiles = $('#btnBrowseFiles');
+  const btnBrowseFolder = $('#btnBrowseFolder');
+  const btnPrivacyCam = $('#btnPrivacyCam');
   const queueSection = $('#queueSection');
   const fileQueueList = $('#fileQueueList');
   const cleanAllBtn = $('#cleanAllBtn');
@@ -64,14 +69,58 @@
     });
   });
 
-  ['dragleave', 'drop'].forEach(evt => {
-    dropZone.addEventListener(evt, e => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over');
-    });
-  });
+  // ── Recursive Directory Traversal for Folder Drops ──
+  async function traverseFileTree(item) {
+    if (!item) return [];
+    if (item.isFile) {
+      return new Promise(resolve => {
+        item.file(file => resolve([file]), () => resolve([]));
+      });
+    } else if (item.isDirectory) {
+      const dirReader = item.createReader();
+      return new Promise(resolve => {
+        const entries = [];
+        function readBatch() {
+          dirReader.readEntries(async results => {
+            if (!results || !results.length) {
+              const allFiles = [];
+              for (const child of entries) {
+                const childFiles = await traverseFileTree(child);
+                allFiles.push(...childFiles);
+              }
+              resolve(allFiles);
+            } else {
+              entries.push(...results);
+              readBatch();
+            }
+          }, () => resolve([]));
+        }
+        readBatch();
+      });
+    }
+    return [];
+  }
 
-  dropZone.addEventListener('drop', e => {
+  dropZone.addEventListener('drop', async e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+
+    const items = e.dataTransfer?.items;
+    if (items && items.length > 0 && typeof items[0].webkitGetAsEntry === 'function') {
+      const foundFiles = [];
+      for (let i = 0; i < items.length; i++) {
+        const entry = items[i].webkitGetAsEntry();
+        if (entry) {
+          const entryFiles = await traverseFileTree(entry);
+          foundFiles.push(...entryFiles);
+        }
+      }
+      if (foundFiles.length > 0) {
+        handleFiles(foundFiles);
+        return;
+      }
+    }
+
     if (e.dataTransfer && e.dataTransfer.files) {
       handleFiles(Array.from(e.dataTransfer.files));
     }
@@ -83,6 +132,45 @@
       e.target.value = '';
     }
   });
+
+  if (folderInput) {
+    folderInput.addEventListener('change', e => {
+      if (e.target.files) {
+        handleFiles(Array.from(e.target.files));
+        e.target.value = '';
+      }
+    });
+  }
+
+  if (cameraInput) {
+    cameraInput.addEventListener('change', e => {
+      if (e.target.files) {
+        handleFiles(Array.from(e.target.files));
+        e.target.value = '';
+      }
+    });
+  }
+
+  if (btnBrowseFiles) {
+    btnBrowseFiles.onclick = (e) => {
+      e.preventDefault();
+      fileInput.click();
+    };
+  }
+
+  if (btnBrowseFolder) {
+    btnBrowseFolder.onclick = (e) => {
+      e.preventDefault();
+      folderInput.click();
+    };
+  }
+
+  if (btnPrivacyCam) {
+    btnPrivacyCam.onclick = (e) => {
+      e.preventDefault();
+      cameraInput.click();
+    };
+  }
 
   // Keyboard navigation on drop label
   dropZone.addEventListener('keydown', e => {
@@ -350,16 +438,21 @@
       `;
     }
 
-    // Tags Grid
+    // Tags Grid with Live Search Filter
     let tagsHtml = '';
     if (entry.scan.fields.length) {
       const itemsHtml = entry.scan.fields.map(f => `
-        <div class="forensic-item">
+        <div class="forensic-item" data-tag-text="${window.MetaCleanEngine.esc((f.category + ' ' + f.label + ' ' + f.value).toLowerCase())}">
           <span class="forensic-label">${window.MetaCleanEngine.esc(f.category)} • ${window.MetaCleanEngine.esc(f.label)}</span>
           <span class="forensic-val ${f.threat === 'critical' ? 'highlight' : ''}">${window.MetaCleanEngine.esc(f.value)}</span>
         </div>
       `).join('');
-      tagsHtml = `<div class="forensics-grid">${itemsHtml}</div>`;
+      tagsHtml = `
+        <div style="margin-top: 10px;">
+          <input type="text" class="forensics-search-input" placeholder="🔍 Filter ${entry.scan.fields.length} metadata fields (e.g. GPS, serial, camera, author, software)..." oninput="filterForensicsTags('${entry.id}', this.value)" aria-label="Filter metadata tags">
+          <div class="forensics-grid" id="tagsGrid_${entry.id}">${itemsHtml}</div>
+        </div>
+      `;
     } else {
       tagsHtml = `<div style="color:var(--muted); font-size:12px; font-style:italic; margin-bottom:8px;">No tracking metadata found — media is clean.</div>`;
     }
@@ -491,6 +584,17 @@
     if (!entry || !hexPanel) return;
     entry.hexOpen = !entry.hexOpen;
     hexPanel.classList.toggle('hidden', !entry.hexOpen);
+  };
+
+  window.filterForensicsTags = function(id, query) {
+    const grid = $('#tagsGrid_' + id);
+    if (!grid) return;
+    const q = (query || '').toLowerCase().trim();
+    const items = grid.querySelectorAll('.forensic-item');
+    items.forEach(el => {
+      const txt = el.dataset.tagText || el.textContent.toLowerCase();
+      el.style.display = (!q || txt.includes(q)) ? '' : 'none';
+    });
   };
 
   window.removeFile = function(id) {
