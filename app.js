@@ -1082,6 +1082,10 @@
         cleanAiBtn.style.display = 'none';
       }
     }
+
+    if (typeof syncArcadeQueueHUD === 'function') {
+      syncArcadeQueueHUD();
+    }
   }
 
   // Batch Clean All AI Files
@@ -1167,61 +1171,555 @@
   }
 
   // ============================================================================
-  // Cyber Arcade Hub Launcher (29-Game Master Arcade Cabinet)
+  // Cyber Arcade Hub Pavilion & HUD (29-Game Master Cabinet)
   // ============================================================================
   const arcadeModal = $("#arcadeModal");
+  const arcadeDialog = $("#arcadeDialog");
   const arcadeIframe = $("#arcadeIframe");
   const arcadeTabLink = $("#arcadeTabLink");
+  const activeGameTitle = $("#activeGameTitle");
+  const activeGameControls = $("#activeGameControls");
+  const arcadeQuickSelect = $("#arcadeQuickSelect");
+  const arcadeFavBtn = $("#arcadeFavBtn");
+  const arcadeQueueHud = $("#arcadeQueueHud");
+  const arcadeQueueText = $("#arcadeQueueText");
+  const arcadeTabBar = $("#arcadeTabBar");
+  const arcadeGamesGrid = $("#arcadeGamesGrid");
+  const arcadeSearchInput = $("#arcadeSearchInput");
+  const arcadeRecentRow = $("#arcadeRecentRow");
+  const arcadeRecentList = $("#arcadeRecentList");
+  const arcadeFavBadge = $("#arcadeFavBadge");
 
+  // Rich 29-Game Master Dataset
   const arcadeGames = [
-    { id: "turbo", btnId: "#tabArcadeTurbo", bannerId: "#arcadeBannerBtn", path: "game/index.html" },
-    { id: "puzzle", btnId: "#tabArcadePuzzle", bannerId: "#arcadePuzzleBtn", path: "puzzle/index.html" },
-    { id: "breaker", btnId: "#tabArcadeBreaker", bannerId: "#arcadeBreakerBtn", path: "breaker/index.html" },
-    { id: "strike", btnId: "#tabArcadeStrike", bannerId: "#arcadeStrikeBtn", path: "strike/index.html" },
-    { id: "snake", btnId: "#tabArcadeSnake", bannerId: "#arcadeSnakeBtn", path: "snake/index.html" },
-    { id: "jump", btnId: "#tabArcadeJump", bannerId: "#arcadeJumpBtn", path: "jump/index.html" },
-    { id: "pulse", btnId: "#tabArcadePulse", bannerId: "#arcadePulseBtn", path: "pulse/index.html" },
-    { id: "runner", btnId: "#tabArcadeRunner", bannerId: "#arcadeRunnerBtn", path: "runner/index.html" },
-    { id: "defense", btnId: "#tabArcadeDefense", bannerId: "#arcadeDefenseBtn", path: "defense/index.html" },
-    { id: "survivor", btnId: "#tabArcadeSurvivor", bannerId: "#arcadeSurvivorBtn", path: "survivor/index.html" },
-    { id: "portal", btnId: "#tabArcadePortal", bannerId: "#arcadePortalBtn", path: "portal/index.html" },
-    { id: "rogue", btnId: "#tabArcadeRogue", bannerId: "#arcadeRogueBtn", path: "rogue/index.html" },
-    { id: "tower", btnId: "#tabArcadeTower", bannerId: "#arcadeTowerBtn", path: "tower/index.html" },
-    { id: "kart", btnId: "#tabArcadeKart", bannerId: "#arcadeKartBtn", path: "kart/index.html" },
-    { id: "match", btnId: "#tabArcadeMatch", bannerId: "#arcadeMatchBtn", path: "match/index.html" },
-    { id: "pinball", btnId: "#tabArcadePinball", bannerId: "#arcadePinballBtn", path: "pinball/index.html" },
-    { id: "shinobi", btnId: "#tabArcadeShinobi", bannerId: "#arcadeShinobiBtn", path: "shinobi/index.html" },
-    { id: "deck", btnId: "#tabArcadeDeck", bannerId: "#arcadeDeckBtn", path: "deck/index.html" },
-    { id: "flight", btnId: "#tabArcadeFlight", bannerId: "#arcadeFlightBtn", path: "flight/index.html" },
-    { id: "billiards", btnId: "#tabArcadeBilliards", bannerId: "#arcadeBilliardsBtn", path: "billiards/index.html" },
-    { id: "tactics", btnId: "#tabArcadeTactics", bannerId: "#arcadeTacticsBtn", path: "tactics/index.html" },
-    { id: "mining", btnId: "#tabArcadeMining", bannerId: "#arcadeMiningBtn", path: "mining/index.html" },
-    { id: "golf", btnId: "#tabArcadeGolf", bannerId: "#arcadeGolfBtn", path: "golf/index.html" },
-    { id: "fighter", btnId: "#tabArcadeFighter", bannerId: "#arcadeFighterBtn", path: "fighter/index.html" },
-    { id: "stealth", btnId: "#tabArcadeStealth", bannerId: "#arcadeStealthBtn", path: "stealth/index.html" },
-    { id: "bomber", btnId: "#tabArcadeBomber", bannerId: "#arcadeBomberBtn", path: "bomber/index.html" },
-    { id: "pacman", btnId: "#tabArcadePacman", bannerId: "#arcadePacmanBtn", path: "pacman/index.html" },
-    { id: "tycoon", btnId: "#tabArcadeTycoon", bannerId: "#arcadeTycoonBtn", path: "tycoon/index.html" },
-    { id: "tetris", btnId: "#tabArcadeTetris", bannerId: "#arcadeTetrisBtn", path: "tetris/index.html" }
+    {
+      id: "turbo",
+      name: "Turbo Drive",
+      emoji: "🏎️",
+      category: "racing",
+      categoryLabel: "Racing & Speed",
+      tag: "Mode-7 Pseudo-3D",
+      desc: "High-octane outrun highway racer with speed boosts, traffic weaving, and synthwave beats.",
+      controls: "← → or A/D to steer • Space for Nitro",
+      featured: true,
+      path: "game/index.html"
+    },
+    {
+      id: "puzzle",
+      name: "Cyber Circuit",
+      emoji: "🧩",
+      category: "puzzle",
+      categoryLabel: "Puzzle & Logic",
+      tag: "Logic Network",
+      desc: "Connect neon energy conduits and route power to the main quantum core without short-circuiting.",
+      controls: "Click/Tap to rotate circuit tiles",
+      featured: false,
+      path: "puzzle/index.html"
+    },
+    {
+      id: "breaker",
+      name: "Neon Breaker",
+      emoji: "🧱",
+      category: "classic",
+      categoryLabel: "Retro Classics",
+      tag: "Arcade Brick Breaker",
+      desc: "Futuristic breakout with multiball powerups, explosive lasers, and shifting neon barriers.",
+      controls: "Mouse / ← → to slide paddle",
+      featured: true,
+      path: "breaker/index.html"
+    },
+    {
+      id: "strike",
+      name: "Cyber Strike",
+      emoji: "🚀",
+      category: "action",
+      categoryLabel: "Action & Combat",
+      tag: "Vertical Shmup",
+      desc: "Intense vertical space shoot-em-up with plasma cannons, boss battles, and bullet deflections.",
+      controls: "WASD / Arrows to fly • Space to fire",
+      featured: true,
+      path: "strike/index.html"
+    },
+    {
+      id: "snake",
+      name: "Neon Snake",
+      emoji: "🐍",
+      category: "classic",
+      categoryLabel: "Retro Classics",
+      tag: "Grid Arcade",
+      desc: "Cyberpunk snake with dimensional warp portals, turbo food pellets, and increasing matrix speed.",
+      controls: "Arrow keys / Swipe to turn",
+      featured: false,
+      path: "snake/index.html"
+    },
+    {
+      id: "jump",
+      name: "Quantum Jump",
+      emoji: "🦘",
+      category: "action",
+      categoryLabel: "Action & Combat",
+      tag: "Vertical Platformer",
+      desc: "Infinite neon bounce climber featuring crumbling ledges, gravity springs, and altitude records.",
+      controls: "← → or A/D to steer jumper",
+      featured: false,
+      path: "jump/index.html"
+    },
+    {
+      id: "pulse",
+      name: "Cyber Pulse",
+      emoji: "🎵",
+      category: "puzzle",
+      categoryLabel: "Puzzle & Logic",
+      tag: "Rhythm Beats",
+      desc: "Sync your reflexes to high-energy electronic soundwaves and hit notes at peak tempo.",
+      controls: "D, F, J, K or Tap lanes on beat",
+      featured: true,
+      path: "pulse/index.html"
+    },
+    {
+      id: "runner",
+      name: "Gravity Runner",
+      emoji: "⚡",
+      category: "action",
+      categoryLabel: "Action & Combat",
+      tag: "Endless Runner",
+      desc: "Flip gravity on demand to run along ceilings and floors through razor-sharp cyber obstacles.",
+      controls: "Space / Click to invert gravity",
+      featured: false,
+      path: "runner/index.html"
+    },
+    {
+      id: "defense",
+      name: "Neon Defense",
+      emoji: "🛡️",
+      category: "strategy",
+      categoryLabel: "Strategy & RPG",
+      tag: "Orbital Defense",
+      desc: "Rotate your orbital defense shield to deflect relentless missile barrages from the city core.",
+      controls: "Mouse / Touch to rotate shield",
+      featured: false,
+      path: "defense/index.html"
+    },
+    {
+      id: "survivor",
+      name: "Cyber Survivor",
+      emoji: "🧬",
+      category: "action",
+      categoryLabel: "Action & Combat",
+      tag: "Roguelite Bullet Hell",
+      desc: "Survive massive swarms of corrupted drones, level up, and unlock auto-firing laser weaponry.",
+      controls: "WASD / Arrows to maneuver",
+      featured: true,
+      path: "survivor/index.html"
+    },
+    {
+      id: "portal",
+      name: "Quantum Portal",
+      emoji: "🌀",
+      category: "puzzle",
+      categoryLabel: "Puzzle & Logic",
+      tag: "Physics Runner",
+      desc: "Manipulate space-time portals to teleport across deadly energy voids and electromagnetic traps.",
+      controls: "Arrows to move • Space to warp",
+      featured: false,
+      path: "portal/index.html"
+    },
+    {
+      id: "rogue",
+      name: "Neon Rogue",
+      emoji: "🗡️",
+      category: "strategy",
+      categoryLabel: "Strategy & RPG",
+      tag: "Dungeon Crawler",
+      desc: "Turn-based cyberpunk dungeon crawler with procedural floors, loot drops, and tactical hacking.",
+      controls: "WASD / Arrows / Grid Click to move",
+      featured: true,
+      path: "rogue/index.html"
+    },
+    {
+      id: "tower",
+      name: "Matrix Defense",
+      emoji: "🏰",
+      category: "strategy",
+      categoryLabel: "Strategy & RPG",
+      tag: "Tower Defense",
+      desc: "Deploy and upgrade EMP towers, tesla coils, and laser cannons against armored drone convoys.",
+      controls: "Mouse to place and upgrade towers",
+      featured: false,
+      path: "tower/index.html"
+    },
+    {
+      id: "kart",
+      name: "Cyber Drift",
+      emoji: "🏎️",
+      category: "racing",
+      categoryLabel: "Racing & Speed",
+      tag: "Top-Down Drift",
+      desc: "Top-down time-attack racer with friction-defying drifts, boost pads, and ghost rivals.",
+      controls: "WASD / Arrows • Shift to drift",
+      featured: false,
+      path: "kart/index.html"
+    },
+    {
+      id: "match",
+      name: "Neon Alchemist",
+      emoji: "✨",
+      category: "puzzle",
+      categoryLabel: "Puzzle & Logic",
+      tag: "Match-3 RPG",
+      desc: "Match elemental quantum orbs to cast spells, charge plasma attacks, and defeat cyber beasts.",
+      controls: "Click & drag adjacent gems to swap",
+      featured: false,
+      path: "match/index.html"
+    },
+    {
+      id: "pinball",
+      name: "Quantum Pinball",
+      emoji: "⚡",
+      category: "classic",
+      categoryLabel: "Retro Classics",
+      tag: "Physics Pinball",
+      desc: "Authentic physics pinball table with neon bumpers, multiball ramps, and high-multiplier lanes.",
+      controls: "Z / Left Shift & / / Right Shift for flippers",
+      featured: true,
+      path: "pinball/index.html"
+    },
+    {
+      id: "shinobi",
+      name: "Neon Shinobi",
+      emoji: "⚔️",
+      category: "action",
+      categoryLabel: "Action & Combat",
+      tag: "Action Slasher",
+      desc: "Fast-paced katana action slasher with aerial dashes, parry timing, and holographic bosses.",
+      controls: "Arrows • Z to dash • X to slash",
+      featured: true,
+      path: "shinobi/index.html"
+    },
+    {
+      id: "deck",
+      name: "Cyber Deck",
+      emoji: "🃏",
+      category: "strategy",
+      categoryLabel: "Strategy & RPG",
+      tag: "Cyber Deckbuilder",
+      desc: "Construct an unstoppable virus deck to breach rogue corporate firewalls in tactical card battles.",
+      controls: "Click cards to play with available energy",
+      featured: true,
+      path: "deck/index.html"
+    },
+    {
+      id: "flight",
+      name: "Aero Striker",
+      emoji: "✈️",
+      category: "action",
+      categoryLabel: "Action & Combat",
+      tag: "2.5D Dogfighter",
+      desc: "Air-to-air dogfighting simulation with afterburners, homing missiles, and acrobatic barrel rolls.",
+      controls: "WASD to pitch/bank • Space to fire",
+      featured: false,
+      path: "flight/index.html"
+    },
+    {
+      id: "billiards",
+      name: "Neon Pool",
+      emoji: "🎱",
+      category: "classic",
+      categoryLabel: "Retro Classics",
+      tag: "8-Ball Billiards",
+      desc: "Precision neon billiards with trajectory line preview, spin control, and pocket shot physics.",
+      controls: "Drag cue backward to set power & release",
+      featured: false,
+      path: "billiards/index.html"
+    },
+    {
+      id: "tactics",
+      name: "Mech Warfare",
+      emoji: "🤖",
+      category: "strategy",
+      categoryLabel: "Strategy & RPG",
+      tag: "Turn-Based Tactics",
+      desc: "Command a squad of customized combat mechs across an isometric grid with cover mechanics.",
+      controls: "Mouse to select unit, move & fire",
+      featured: false,
+      path: "tactics/index.html"
+    },
+    {
+      id: "mining",
+      name: "Deep Core",
+      emoji: "⛏️",
+      category: "action",
+      categoryLabel: "Action & Combat",
+      tag: "Drilling Adventure",
+      desc: "Drill deep into the cybernetic mantle to extract precious ores before battery or heat runs out.",
+      controls: "Arrow keys to steer drill & dig",
+      featured: false,
+      path: "mining/index.html"
+    },
+    {
+      id: "golf",
+      name: "Quantum Golf",
+      emoji: "⛳",
+      category: "classic",
+      categoryLabel: "Retro Classics",
+      tag: "Sci-Fi Mini Golf",
+      desc: "Futuristic mini-golf with gravity wells, bounce pads, and teleportation tunnels on neon greens.",
+      controls: "Drag & release to swing putter",
+      featured: false,
+      path: "golf/index.html"
+    },
+    {
+      id: "fighter",
+      name: "Cyber Brawler",
+      emoji: "🥊",
+      category: "action",
+      categoryLabel: "Action & Combat",
+      tag: "2D Arcade Fighter",
+      desc: "Classic 2D one-on-one combat with combos, special plasma moves, and brutal counterattacks.",
+      controls: "A/D to move • J to punch • K to kick",
+      featured: true,
+      path: "fighter/index.html"
+    },
+    {
+      id: "stealth",
+      name: "Ghost Protocol",
+      emoji: "🕵️",
+      category: "action",
+      categoryLabel: "Action & Combat",
+      tag: "Stealth Espionage",
+      desc: "Infiltrate high-security datacenters, avoid laser grids, and hack surveillance cameras undetected.",
+      controls: "WASD / Arrows to sneak past cones",
+      featured: false,
+      path: "stealth/index.html"
+    },
+    {
+      id: "bomber",
+      name: "Grid Detonator",
+      emoji: "💣",
+      category: "classic",
+      categoryLabel: "Retro Classics",
+      tag: "Grid Bomber",
+      desc: "Drop strategic bombs in a destructible maze, trap opponents, and collect blast radius upgrades.",
+      controls: "Arrows to navigate • Space to place bomb",
+      featured: false,
+      path: "bomber/index.html"
+    },
+    {
+      id: "pacman",
+      name: "Quantum Maze",
+      emoji: "👾",
+      category: "classic",
+      categoryLabel: "Retro Classics",
+      tag: "Arcade Maze Chaser",
+      desc: "Navigate glowing cyber labyrinths, devour data nodes, and turn the tables on autonomous hunter bots.",
+      controls: "Arrow keys to guide chaser",
+      featured: true,
+      path: "pacman/index.html"
+    },
+    {
+      id: "tycoon",
+      name: "City Tycoon",
+      emoji: "⚡",
+      category: "strategy",
+      categoryLabel: "Strategy & RPG",
+      tag: "City Management",
+      desc: "Construct and balance power plants, neon commercial zones, and cyber transport in a metropolis.",
+      controls: "Click to zone, construct & manage",
+      featured: false,
+      path: "tycoon/index.html"
+    },
+    {
+      id: "tetris",
+      name: "Quantum Fall",
+      emoji: "🧱",
+      category: "classic",
+      categoryLabel: "Retro Classics",
+      tag: "Falling Blocks",
+      desc: "The timeless tetromino drop re-imagined with glowing neon lines, hard drops, and combo scoring.",
+      controls: "← → to move • ↑ to rotate • Space hard drop",
+      featured: true,
+      path: "tetris/index.html"
+    }
   ];
 
-  function switchGame(url) {
-    const cleanUrl = url.split("?")[0];
-    const cacheBusted = cleanUrl + "?t=" + Date.now();
-    if (arcadeIframe) arcadeIframe.src = cacheBusted;
-    if (arcadeTabLink) arcadeTabLink.href = cleanUrl;
+  // Favorites & Recents in LocalStorage
+  let favoriteGameIds = new Set();
+  try {
+    const rawFavs = localStorage.getItem('metaclean_arcade_favs');
+    if (rawFavs) favoriteGameIds = new Set(JSON.parse(rawFavs));
+  } catch (_) {}
 
+  let recentGameIds = [];
+  try {
+    const rawRecents = localStorage.getItem('metaclean_arcade_recents');
+    if (rawRecents) recentGameIds = JSON.parse(rawRecents);
+  } catch (_) {}
+
+  let currentCategory = 'all';
+  let currentSearchQuery = '';
+  let activeGame = arcadeGames[0];
+
+  function saveFavorites() {
+    try {
+      localStorage.setItem('metaclean_arcade_favs', JSON.stringify(Array.from(favoriteGameIds)));
+    } catch (_) {}
+    updateFavBadges();
+  }
+
+  function saveRecents() {
+    try {
+      localStorage.setItem('metaclean_arcade_recents', JSON.stringify(recentGameIds.slice(0, 5)));
+    } catch (_) {}
+    renderRecentlyPlayed();
+  }
+
+  function updateFavBadges() {
+    const count = favoriteGameIds.size;
+    if (arcadeFavBadge) arcadeFavBadge.textContent = count;
+    const favCountBadge = $('#favCountBadge');
+    if (favCountBadge) favCountBadge.textContent = count;
+  }
+
+  // Render Pavilion 29-Game Responsive Grid
+  function renderArcadeGrid(cat = currentCategory, query = currentSearchQuery) {
+    if (!arcadeGamesGrid) return;
+    currentCategory = cat;
+    currentSearchQuery = (query || '').toLowerCase().trim();
+
+    const filtered = arcadeGames.filter(g => {
+      // Category filter
+      let matchCat = true;
+      if (cat === 'featured') matchCat = !!g.featured;
+      else if (cat === 'favorites') matchCat = favoriteGameIds.has(g.id);
+      else if (cat !== 'all') matchCat = (g.category === cat);
+
+      if (!matchCat) return false;
+
+      // Text query
+      if (currentSearchQuery) {
+        const text = `${g.name} ${g.desc} ${g.tag} ${g.categoryLabel} ${g.controls}`.toLowerCase();
+        return text.includes(currentSearchQuery);
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      arcadeGamesGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; color: var(--muted);">
+          <div style="font-size: 32px; margin-bottom: 8px;">🎮</div>
+          <strong style="color: #cbd5e1; font-size: 15px;">No arcade games match this criteria</strong>
+          <p style="font-size: 12px; margin-top: 4px;">Try a different search keyword or category tab.</p>
+        </div>
+      `;
+      return;
+    }
+
+    arcadeGamesGrid.innerHTML = filtered.map(g => {
+      const isFav = favoriteGameIds.has(g.id);
+      return `
+        <div class="game-card ${g.featured ? 'featured-card' : ''}" id="gameCard_${g.id}">
+          <div class="game-card-top">
+            <div class="game-header-info">
+              <div class="game-icon-box">${g.emoji}</div>
+              <div class="game-title-wrap">
+                <h3 class="game-card-title">${window.MetaCleanEngine.esc(g.name)}</h3>
+                <span class="game-card-tag">${window.MetaCleanEngine.esc(g.tag)}</span>
+              </div>
+            </div>
+            <button type="button" class="btn-card-fav ${isFav ? 'active' : ''}" onclick="toggleCardFav('${g.id}')" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
+              ${isFav ? '❤️' : '🤍'}
+            </button>
+          </div>
+          <p class="game-card-desc">${window.MetaCleanEngine.esc(g.desc)}</p>
+          <div class="game-card-footer">
+            <span class="game-control-hint" title="${window.MetaCleanEngine.esc(g.controls)}">🎮 ${window.MetaCleanEngine.esc(g.controls)}</span>
+            <button type="button" class="btn-play-game" onclick="openArcade('${g.path}')">▶ Play Now</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderRecentlyPlayed() {
+    if (!arcadeRecentRow || !arcadeRecentList) return;
+    const recents = recentGameIds
+      .map(id => arcadeGames.find(g => g.id === id))
+      .filter(Boolean);
+
+    if (recents.length === 0) {
+      arcadeRecentRow.classList.add('hidden');
+      return;
+    }
+
+    arcadeRecentRow.classList.remove('hidden');
+    arcadeRecentList.innerHTML = recents.map(g => `
+      <button type="button" class="recent-game-chip" onclick="openArcade('${g.path}')">
+        ${g.emoji} ${window.MetaCleanEngine.esc(g.name)}
+      </button>
+    `).join('');
+  }
+
+  // Populate Dropdown & Tab Bar in Modal
+  function populateQuickSelect() {
+    if (!arcadeQuickSelect) return;
+    const categories = [
+      { key: 'featured', label: '🔥 Featured Games' },
+      { key: 'action', label: '💥 Action & Combat' },
+      { key: 'racing', label: '🏎️ Racing & Speed' },
+      { key: 'classic', label: '🧱 Retro Classics' },
+      { key: 'puzzle', label: '🧩 Puzzle & Logic' },
+      { key: 'strategy', label: '🏰 Strategy & RPG' }
+    ];
+
+    arcadeQuickSelect.innerHTML = categories.map(c => {
+      const games = arcadeGames.filter(g => c.key === 'featured' ? g.featured : g.category === c.key);
+      const opts = games.map(g => `<option value="${g.path}">${g.emoji} ${window.MetaCleanEngine.esc(g.name)}</option>`).join('');
+      return `<optgroup label="${c.label}">${opts}</optgroup>`;
+    }).join('');
+  }
+
+  function populateTabBar() {
+    if (!arcadeTabBar) return;
+    arcadeTabBar.innerHTML = arcadeGames.map(g => `
+      <button type="button" class="arcade-tab-btn" id="tabArcade_${g.id}" onclick="switchGame('${g.path}')">
+        ${g.emoji} ${window.MetaCleanEngine.esc(g.name)}
+      </button>
+    `).join('');
+  }
+
+  function switchGame(urlOrPath) {
+    const cleanUrl = urlOrPath.split("?")[0];
     const targetFolder = cleanUrl.split("/")[0];
-    arcadeGames.forEach(g => {
-      const tabEl = $(g.btnId);
-      if (tabEl) {
-        const match = g.path.startsWith(targetFolder);
-        tabEl.classList.toggle("active", match);
-        if (match && typeof tabEl.scrollIntoView === 'function') {
-          tabEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-        }
+    const target = arcadeGames.find(g => g.path.startsWith(targetFolder) || g.id === urlOrPath) || arcadeGames[0];
+    activeGame = target;
+
+    const cacheBusted = target.path + "?t=" + Date.now();
+    if (arcadeIframe) arcadeIframe.src = cacheBusted;
+    if (arcadeTabLink) arcadeTabLink.href = target.path;
+
+    if (activeGameTitle) activeGameTitle.textContent = `${target.emoji} ${target.name}`;
+    if (activeGameControls) activeGameControls.textContent = `Controls: ${target.controls}`;
+    if (arcadeQuickSelect) arcadeQuickSelect.value = target.path;
+
+    // Update Favorite Button in modal
+    if (arcadeFavBtn) {
+      const isFav = favoriteGameIds.has(target.id);
+      arcadeFavBtn.textContent = isFav ? '❤️' : '🤍';
+      arcadeFavBtn.classList.toggle('active', isFav);
+    }
+
+    // Sync tab button active state
+    $$('.arcade-tab-btn').forEach(btn => {
+      const match = btn.id === `tabArcade_${target.id}`;
+      btn.classList.toggle('active', match);
+      if (match && typeof btn.scrollIntoView === 'function') {
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }
     });
+
+    // Update Recents
+    recentGameIds = [target.id, ...recentGameIds.filter(id => id !== target.id)].slice(0, 5);
+    saveRecents();
   }
 
   function openArcade(gameUrl = "game/index.html") {
@@ -1229,6 +1727,7 @@
     arcadeModal.classList.remove("hidden");
     arcadeModal.setAttribute("aria-hidden", "false");
     switchGame(gameUrl);
+    syncArcadeQueueHUD();
     document.body.style.overflow = "hidden";
   }
 
@@ -1236,20 +1735,112 @@
     if (!arcadeModal) return;
     arcadeModal.classList.add("hidden");
     arcadeModal.setAttribute("aria-hidden", "true");
-    if (arcadeIframe) {
-      arcadeIframe.src = "about:blank";
-    }
+    if (arcadeIframe) arcadeIframe.src = "about:blank";
     document.body.style.overflow = "";
+
+    // Exit fullscreen if active
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
   }
 
-  // Bind arcade tabs & banner launch buttons
-  arcadeGames.forEach(g => {
-    const tabBtn = $(g.btnId);
-    if (tabBtn) tabBtn.onclick = () => switchGame(g.path);
+  function playRandomGame() {
+    const randomIndex = Math.floor(Math.random() * arcadeGames.length);
+    const chosen = arcadeGames[randomIndex];
+    openArcade(chosen.path);
+  }
 
-    const bannerBtn = $(g.bannerId);
-    if (bannerBtn) bannerBtn.onclick = () => openArcade(g.path);
+  function reloadActiveGame() {
+    if (activeGame) switchGame(activeGame.path);
+  }
+
+  function toggleArcadeFullscreen() {
+    const dialog = arcadeDialog || arcadeModal;
+    if (!document.fullscreenElement) {
+      if (dialog?.requestFullscreen) dialog.requestFullscreen();
+      else if (dialog?.webkitRequestFullscreen) dialog.webkitRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  }
+
+  function toggleActiveGameFav() {
+    if (!activeGame) return;
+    toggleCardFav(activeGame.id);
+    if (arcadeFavBtn) {
+      const isFav = favoriteGameIds.has(activeGame.id);
+      arcadeFavBtn.textContent = isFav ? '❤️' : '🤍';
+      arcadeFavBtn.classList.toggle('active', isFav);
+    }
+  }
+
+  window.toggleCardFav = function(gameId) {
+    if (favoriteGameIds.has(gameId)) {
+      favoriteGameIds.delete(gameId);
+    } else {
+      favoriteGameIds.add(gameId);
+    }
+    saveFavorites();
+    renderArcadeGrid(currentCategory, currentSearchQuery);
+    if (activeGame && activeGame.id === gameId && arcadeFavBtn) {
+      const isFav = favoriteGameIds.has(gameId);
+      arcadeFavBtn.textContent = isFav ? '❤️' : '🤍';
+      arcadeFavBtn.classList.toggle('active', isFav);
+    }
+  };
+
+  window.filterArcadeCards = function(query) {
+    renderArcadeGrid(currentCategory, query);
+  };
+
+  // Live HUD Sync for Active File Scrubbing Queue inside Arcade Modal
+  function syncArcadeQueueHUD() {
+    if (!arcadeQueueHud || !arcadeQueueText) return;
+    const total = queue.size;
+    if (total === 0) {
+      arcadeQueueHud.style.display = 'none';
+      return;
+    }
+
+    const cleaned = Array.from(queue.values()).filter(e => e.cleanResult).length;
+    arcadeQueueHud.style.display = 'inline-flex';
+
+    if (cleaned === total) {
+      arcadeQueueHud.className = 'arcade-queue-hud';
+      arcadeQueueText.textContent = `✓ Queue: All ${total} Files 100% Sanitized`;
+    } else {
+      arcadeQueueHud.className = 'arcade-queue-hud active';
+      arcadeQueueText.textContent = `⚡ Queue: ${cleaned}/${total} Cleaned in background`;
+    }
+  }
+
+  // Category Filter Chips Listener
+  $$('.arcade-cat-chip').forEach(chip => {
+    chip.onclick = () => {
+      $$('.arcade-cat-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderArcadeGrid(chip.dataset.cat, arcadeSearchInput ? arcadeSearchInput.value : '');
+    };
   });
+
+  // Action Buttons & Top Launcher
+  const btnArcadeRandom = $("#btnArcadeRandom");
+  if (btnArcadeRandom) btnArcadeRandom.onclick = playRandomGame;
+
+  const btnArcadeMaster = $("#btnArcadeMaster");
+  if (btnArcadeMaster) btnArcadeMaster.onclick = () => openArcade("game/index.html");
+
+  const arcadeReloadBtn = $("#arcadeReloadBtn");
+  if (arcadeReloadBtn) arcadeReloadBtn.onclick = reloadActiveGame;
+
+  const arcadeRandomBtn = $("#arcadeRandomBtn");
+  if (arcadeRandomBtn) arcadeRandomBtn.onclick = playRandomGame;
+
+  const arcadeFavBtnEl = $("#arcadeFavBtn");
+  if (arcadeFavBtnEl) arcadeFavBtnEl.onclick = toggleActiveGameFav;
+
+  const arcadeFullscreenBtn = $("#arcadeFullscreenBtn");
+  if (arcadeFullscreenBtn) arcadeFullscreenBtn.onclick = toggleArcadeFullscreen;
 
   const openBtn = $("#openArcadeBtn");
   if (openBtn) openBtn.onclick = () => openArcade("game/index.html");
@@ -1260,11 +1851,33 @@
   const backdrop = $("#arcadeBackdrop");
   if (backdrop) backdrop.onclick = closeArcade;
 
+  // Keyboard Shortcuts in Arcade Modal
   window.addEventListener("keydown", e => {
-    if (e.key === "Escape" && arcadeModal && !arcadeModal.classList.contains("hidden")) {
+    if (!arcadeModal || arcadeModal.classList.contains("hidden")) return;
+    if (e.key === "Escape") {
       closeArcade();
+    } else if (e.key === "r" && (e.ctrlKey || e.metaKey || document.activeElement.tagName !== 'INPUT')) {
+      if (document.activeElement.tagName !== 'INPUT') {
+        reloadActiveGame();
+      }
     }
   });
+
+  // Global window methods
+  window.openArcade = openArcade;
+  window.closeArcade = closeArcade;
+  window.switchGame = switchGame;
+  window.playRandomGame = playRandomGame;
+  window.reloadActiveGame = reloadActiveGame;
+  window.toggleArcadeFullscreen = toggleArcadeFullscreen;
+  window.toggleActiveGameFav = toggleActiveGameFav;
+
+  // Initial Initialization
+  populateQuickSelect();
+  populateTabBar();
+  renderRecentlyPlayed();
+  renderArcadeGrid('all', '');
+  updateFavBadges();
 
   // ── Offline PWA Service Worker & Install Prompt ──
   if ('serviceWorker' in navigator) {

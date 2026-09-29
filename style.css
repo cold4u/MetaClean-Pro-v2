@@ -826,58 +826,526 @@ main {
 }
 
 /* ── Cyber Arcade Section & Modal ── */
-.arcade-modal{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px}
-.arcade-modal.hidden{display:none}
-.arcade-modal-backdrop{position:absolute;inset:0;background:rgba(4,5,8,0.85);backdrop-filter:blur(8px)}
-.arcade-modal-dialog{position:relative;z-index:2;width:100%;max-width:960px;height:88vh;max-height:760px;background:#0d0f15;border:1px solid #332d56;border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.8),0 0 40px rgba(123,76,255,0.2)}
-.arcade-modal-header{height:52px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;background:#141722;border-bottom:1px solid #232736}
-.arcade-modal-title{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;color:#f1f2f6;min-width:0;flex:1}
-.arcade-tag{background:linear-gradient(135deg,#ff0055,#bc8cff);color:#fff;font-size:10px;font-weight:900;padding:3px 7px;border-radius:6px;letter-spacing:.5px;flex-shrink:0}
-.arcade-tab-bar{display:inline-flex;background:#0c0f17;border:1px solid #232738;border-radius:8px;padding:2px;gap:2px;overflow-x:auto;max-width:100%;white-space:nowrap;-webkit-overflow-scrolling:touch}
-.arcade-tab-btn{background:transparent;border:0;color:#8a94a6;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;transition:all .15s;flex-shrink:0}
-.arcade-tab-btn:hover{color:#fff}
-.arcade-tab-btn.active{background:#232738;color:#00f0ff;box-shadow:0 0 10px rgba(0,240,255,0.2)}
-.arcade-modal-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.arcade-action-btn{display:inline-flex;align-items:center;font-size:12px;color:#aeb3bd;text-decoration:none;background:#1e2230;border:1px solid #2f3545;padding:6px 10px;border-radius:7px;cursor:pointer;transition:all .15s ease}
-.arcade-action-btn:hover{background:#2b3044;color:#fff;border-color:#49526b}
-.arcade-action-btn.close-btn{font-weight:800;color:#ff6b8b;border-color:#5c1f30}
-.arcade-action-btn.close-btn:hover{background:#4a1322;color:#ff99b0;border-color:#8c253f}
-.arcade-modal-body{flex:1 1 0%;min-height:0;width:100%;background:#000;position:relative}
-.arcade-iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;display:block}
+.arcade-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.arcade-modal.hidden { display: none; }
+.arcade-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 5, 8, 0.88);
+  backdrop-filter: blur(10px);
+}
+.arcade-modal-dialog {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1080px;
+  height: 90vh;
+  max-height: 840px;
+  background: #0d0f15;
+  border: 1px solid #3d346b;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 50px rgba(123, 76, 255, 0.25);
+}
+.arcade-modal-dialog:fullscreen,
+.arcade-modal-dialog:-webkit-full-screen {
+  max-width: 100vw;
+  max-height: 100vh;
+  height: 100vh;
+  width: 100vw;
+  border-radius: 0;
+  border: none;
+}
+.arcade-modal-header {
+  height: 56px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #141722;
+  border-bottom: 1px solid #232736;
+  gap: 12px;
+}
+.arcade-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f1f2f6;
+  min-width: 0;
+  flex: 1;
+}
+.arcade-tag {
+  background: linear-gradient(135deg, #ff0055, #bc8cff);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.arcade-game-hud {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.arcade-game-hud strong {
+  font-size: 14px;
+  color: #fff;
+  white-space: nowrap;
+}
+.active-game-badge {
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  color: #00f0ff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.arcade-queue-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+  animation: hudPulse 2s infinite ease-in-out;
+}
+@keyframes hudPulse {
+  0%, 100% { border-color: rgba(16, 185, 129, 0.3); }
+  50% { border-color: rgba(16, 185, 129, 0.8); }
+}
+.arcade-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.arcade-select-dropdown {
+  background: #090c14;
+  border: 1px solid #333a52;
+  color: #00f0ff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 7px;
+  outline: none;
+  cursor: pointer;
+  max-width: 170px;
+}
+.arcade-select-dropdown:focus { border-color: #00f0ff; }
+.arcade-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #aeb3bd;
+  text-decoration: none;
+  background: #1e2230;
+  border: 1px solid #2f3545;
+  padding: 6px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.arcade-action-btn:hover {
+  background: #2b3044;
+  color: #fff;
+  border-color: #49526b;
+}
+.arcade-action-btn.fav-btn.active {
+  color: #ff3366;
+  border-color: #ff3366;
+  background: rgba(255, 51, 102, 0.15);
+}
+.arcade-action-btn.close-btn {
+  font-weight: 800;
+  color: #ff6b8b;
+  border-color: #5c1f30;
+}
+.arcade-action-btn.close-btn:hover {
+  background: #4a1322;
+  color: #ff99b0;
+  border-color: #8c253f;
+}
+.arcade-tab-bar {
+  display: inline-flex;
+  background: #0c0f17;
+  border-bottom: 1px solid #232738;
+  padding: 4px 10px;
+  gap: 4px;
+  overflow-x: auto;
+  max-width: 100%;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.arcade-tab-btn {
+  background: transparent;
+  border: 0;
+  color: #8a94a6;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.arcade-tab-btn:hover { color: #fff; }
+.arcade-tab-btn.active {
+  background: #232738;
+  color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+.arcade-modal-body {
+  flex: 1 1 0%;
+  min-height: 0;
+  width: 100%;
+  background: #000;
+  position: relative;
+}
+.arcade-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
 
-.arcade-banner-section{margin-top:60px}
-.arcade-banner-card{border:1px solid #332d56;background:linear-gradient(135deg,#131122 0%,#0d0f15 100%);border-radius:20px;padding:35px 30px;display:flex;align-items:center;justify-content:space-between;gap:30px;box-shadow:0 0 35px rgba(123,76,255,0.15)}
-.arcade-banner-content{flex:1}
-.arcade-banner-tag{color:#ff3b81;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase}
-.arcade-banner-card h2{font-size:24px;margin:10px 0 8px;color:#fff}
-.arcade-banner-card p{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 20px;max-width:680px}
-.arcade-banner-btns{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+/* ── Cyber Arcade Pavilion Section ── */
+.arcade-banner-section { margin-top: 60px; }
+.arcade-banner-card {
+  border: 1px solid #332d56;
+  background: linear-gradient(135deg, #131122 0%, #0d0f15 100%);
+  border-radius: 20px;
+  padding: 35px 30px;
+  box-shadow: 0 0 40px rgba(123, 76, 255, 0.15);
+}
+.arcade-pavilion-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+.arcade-top-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.arcade-banner-tag {
+  color: #ff3b81;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.arcade-zero-lag-tag {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.arcade-banner-content h2 {
+  font-size: 24px;
+  margin: 0 0 10px;
+  color: #fff;
+}
+.arcade-banner-content p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 720px;
+}
+.arcade-pavilion-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.primary-arcade-btn {
+  background: linear-gradient(135deg, #ff2a85 0%, #7b2cbf 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 10px 18px;
+  border-radius: 9px;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 4px 15px rgba(255, 42, 133, 0.4);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.primary-arcade-btn.random-btn {
+  background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%);
+  color: #050a14;
+  box-shadow: 0 4px 15px rgba(0, 240, 255, 0.35);
+}
+.primary-arcade-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.15);
+}
 
-.primary-arcade-btn{background:linear-gradient(135deg,#ff2a85 0%,#7b2cbf 100%);color:#fff;font-weight:800;font-size:13px;padding:10px 18px;border-radius:9px;cursor:pointer;border:none;box-shadow:0 4px 15px rgba(255,42,133,0.4);transition:all .2s ease}
-.primary-arcade-btn.puzzle-btn{background:linear-gradient(135deg,#00b4d8 0%,#00f0ff 100%);color:#050a14;box-shadow:0 4px 15px rgba(0,240,255,0.35)}
-.primary-arcade-btn.breaker-btn{background:linear-gradient(135deg,#ff9e00 0%,#ff5400 100%);color:#fff;box-shadow:0 4px 15px rgba(255,158,0,0.35)}
-.primary-arcade-btn.strike-btn{background:linear-gradient(135deg,#9d4edd 0%,#3a0ca3 100%);color:#fff;box-shadow:0 4px 15px rgba(157,78,221,0.35)}
-.primary-arcade-btn.survivor-btn{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;box-shadow:0 4px 15px rgba(16,185,129,0.35)}
-.primary-arcade-btn.portal-btn{background:linear-gradient(135deg,#00f0ff 0%,#f97316 100%);color:#05070a;box-shadow:0 4px 15px rgba(0,240,255,0.35)}
-.primary-arcade-btn.rogue-btn{background:linear-gradient(135deg,#e11d48 0%,#be123c 100%);color:#fff;box-shadow:0 4px 15px rgba(225,29,72,0.35)}
-.primary-arcade-btn.tower-btn{background:linear-gradient(135deg,#6366f1 0%,#4338ca 100%);color:#fff;box-shadow:0 4px 15px rgba(99,102,241,0.35)}
-.primary-arcade-btn.kart-btn{background:linear-gradient(135deg,#ec4899 0%,#db2777 100%);color:#fff;box-shadow:0 4px 15px rgba(236,72,153,0.35)}
-.primary-arcade-btn.match-btn{background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;box-shadow:0 4px 15px rgba(139,92,246,0.35)}
-.primary-arcade-btn.pinball-btn{background:linear-gradient(135deg,#eab308 0%,#ca8a04 100%);color:#05070a;box-shadow:0 4px 15px rgba(234,179,8,0.35)}
-.primary-arcade-btn.shinobi-btn{background:linear-gradient(135deg,#06b6d4 0%,#0891b2 100%);color:#fff;box-shadow:0 4px 15px rgba(6,182,212,0.35)}
-.primary-arcade-btn.deck-btn{background:linear-gradient(135deg,#3b82f6 0%,#1d4ed8 100%);color:#fff;box-shadow:0 4px 15px rgba(59,130,246,0.35)}
-.primary-arcade-btn.flight-btn{background:linear-gradient(135deg,#f43f5e 0%,#e11d48 100%);color:#fff;box-shadow:0 4px 15px rgba(244,63,94,0.35)}
-.primary-arcade-btn.billiards-btn{background:linear-gradient(135deg,#059669 0%,#047857 100%);color:#fff;box-shadow:0 4px 15px rgba(5,150,105,0.35)}
-.primary-arcade-btn.tactics-btn{background:linear-gradient(135deg,#4f46e5 0%,#4338ca 100%);color:#fff;box-shadow:0 4px 15px rgba(79,70,229,0.35)}
-.primary-arcade-btn.mining-btn{background:linear-gradient(135deg,#d97706 0%,#b45309 100%);color:#fff;box-shadow:0 4px 15px rgba(217,119,6,0.35)}
-.primary-arcade-btn.golf-btn{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;box-shadow:0 4px 15px rgba(16,185,129,0.35)}
-.primary-arcade-btn.fighter-btn{background:linear-gradient(135deg,#e11d48 0%,#be123c 100%);color:#fff;box-shadow:0 4px 15px rgba(225,29,72,0.35)}
-.primary-arcade-btn.stealth-btn{background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);color:#fff;box-shadow:0 4px 15px rgba(2,132,199,0.35)}
-.primary-arcade-btn.bomber-btn{background:linear-gradient(135deg,#ea580c 0%,#c2410c 100%);color:#fff;box-shadow:0 4px 15px rgba(234,88,12,0.35)}
-.primary-arcade-btn.pacman-btn{background:linear-gradient(135deg,#eab308 0%,#ca8a04 100%);color:#05070a;box-shadow:0 4px 15px rgba(234,179,8,0.35)}
-.primary-arcade-btn.tycoon-btn{background:linear-gradient(135deg,#06b6d4 0%,#0891b2 100%);color:#fff;box-shadow:0 4px 15px rgba(6,182,212,0.35)}
-.primary-arcade-btn.tetris-btn{background:linear-gradient(135deg,#8b5cf6 0%,#6d28d9 100%);color:#fff;box-shadow:0 4px 15px rgba(139,92,246,0.35)}
-.primary-arcade-btn:hover{transform:translateY(-2px);filter:brightness(1.15)}
+/* ── Arcade Toolbar & Filter Chips ── */
+.arcade-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.arcade-category-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.arcade-cat-chip {
+  background: #141724;
+  border: 1px solid #282f45;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.arcade-cat-chip:hover {
+  background: #1d2235;
+  color: #fff;
+}
+.arcade-cat-chip.active {
+  background: linear-gradient(135deg, rgba(123, 76, 255, 0.3) 0%, rgba(217, 70, 239, 0.3) 100%);
+  border-color: #a855f7;
+  color: #f1f2f6;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+}
+.arcade-search-wrap {
+  min-width: 240px;
+  flex: 1;
+  max-width: 340px;
+}
+.arcade-search-input {
+  width: 100%;
+  background: #0a0c13;
+  border: 1px solid #282f45;
+  border-radius: 8px;
+  color: #f1f2f6;
+  font-size: 12px;
+  padding: 7px 12px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.arcade-search-input:focus { border-color: var(--accent); }
+
+/* ── Recently Played Row ── */
+.arcade-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: rgba(123, 76, 255, 0.08);
+  border: 1px dashed rgba(123, 76, 255, 0.3);
+  padding: 8px 14px;
+  border-radius: 10px;
+}
+.arcade-recent-row.hidden { display: none; }
+.recent-tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #c084fc;
+  letter-spacing: 0.5px;
+}
+.recent-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.recent-game-chip {
+  background: #181d2a;
+  border: 1px solid #30374e;
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.recent-game-chip:hover {
+  background: #252b3e;
+  color: #00f0ff;
+  border-color: #00f0ff;
+}
+
+/* ── Dynamic 29-Game Responsive Grid ── */
+.arcade-games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.game-card {
+  background: #121520;
+  border: 1px solid #252a3b;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.game-card:hover {
+  transform: translateY(-3px);
+  border-color: #7952ff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(121, 82, 255, 0.2);
+}
+.game-card.featured-card {
+  border-top: 2px solid #ec4899;
+}
+.game-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.game-header-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.game-icon-box {
+  width: 42px;
+  height: 42px;
+  background: #1a1e2d;
+  border: 1px solid #2e3549;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.game-title-wrap {
+  min-width: 0;
+}
+.game-card-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.game-card-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.3px;
+}
+.btn-card-fav {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.15s ease;
+  padding: 4px;
+  line-height: 1;
+}
+.btn-card-fav:hover { color: #f43f5e; transform: scale(1.15); }
+.btn-card-fav.active { color: #f43f5e; }
+
+.game-card-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.game-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.game-control-hint {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+.btn-play-game {
+  background: linear-gradient(135deg, #7952ff 0%, #9333ea 100%);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.btn-play-game:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.2);
+  box-shadow: 0 4px 12px rgba(121, 82, 255, 0.4);
+}
 
 /* ── Footer ── */
 .site-footer {

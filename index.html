@@ -17,46 +17,36 @@
 <!-- Cyber Arcade Modal (29-Game Master Arcade Cabinet) -->
 <div id="arcadeModal" class="arcade-modal hidden" aria-hidden="true" role="dialog" aria-label="Cyber Arcade Master Cabinet">
   <div class="arcade-modal-backdrop" id="arcadeBackdrop"></div>
-  <div class="arcade-modal-dialog">
+  <div class="arcade-modal-dialog" id="arcadeDialog">
     <div class="arcade-modal-header">
       <div class="arcade-modal-title">
-        <span class="arcade-tag">29-GAME ARCADE</span>
-        <div class="arcade-tab-bar" id="arcadeTabBar">
-          <button class="arcade-tab-btn active" id="tabArcadeTurbo" data-src="game/index.html">🏎️ Turbo Drive</button>
-          <button class="arcade-tab-btn" id="tabArcadePuzzle" data-src="puzzle/index.html">🧩 Cyber Circuit</button>
-          <button class="arcade-tab-btn" id="tabArcadeBreaker" data-src="breaker/index.html">🧱 Neon Breaker</button>
-          <button class="arcade-tab-btn" id="tabArcadeStrike" data-src="strike/index.html">🚀 Cyber Strike</button>
-          <button class="arcade-tab-btn" id="tabArcadeSnake" data-src="snake/index.html">🐍 Neon Snake</button>
-          <button class="arcade-tab-btn" id="tabArcadeJump" data-src="jump/index.html">🦘 Quantum Jump</button>
-          <button class="arcade-tab-btn" id="tabArcadePulse" data-src="pulse/index.html">🎵 Cyber Pulse</button>
-          <button class="arcade-tab-btn" id="tabArcadeRunner" data-src="runner/index.html">⚡ Gravity Runner</button>
-          <button class="arcade-tab-btn" id="tabArcadeDefense" data-src="defense/index.html">🛡️ Neon Defense</button>
-          <button class="arcade-tab-btn" id="tabArcadeSurvivor" data-src="survivor/index.html">🧬 Cyber Survivor</button>
-          <button class="arcade-tab-btn" id="tabArcadePortal" data-src="portal/index.html">🌀 Quantum Portal</button>
-          <button class="arcade-tab-btn" id="tabArcadeRogue" data-src="rogue/index.html">🗡️ Neon Rogue</button>
-          <button class="arcade-tab-btn" id="tabArcadeTower" data-src="tower/index.html">🏰 Matrix Defense</button>
-          <button class="arcade-tab-btn" id="tabArcadeKart" data-src="kart/index.html">🏎️ Cyber Drift</button>
-          <button class="arcade-tab-btn" id="tabArcadeMatch" data-src="match/index.html">✨ Neon Alchemist</button>
-          <button class="arcade-tab-btn" id="tabArcadePinball" data-src="pinball/index.html">⚡ Quantum Pinball</button>
-          <button class="arcade-tab-btn" id="tabArcadeShinobi" data-src="shinobi/index.html">⚔️ Neon Shinobi</button>
-          <button class="arcade-tab-btn" id="tabArcadeDeck" data-src="deck/index.html">🃏 Cyber Deck</button>
-          <button class="arcade-tab-btn" id="tabArcadeFlight" data-src="flight/index.html">✈️ Aero Striker</button>
-          <button class="arcade-tab-btn" id="tabArcadeBilliards" data-src="billiards/index.html">🎱 Neon Pool</button>
-          <button class="arcade-tab-btn" id="tabArcadeTactics" data-src="tactics/index.html">🤖 Mech Warfare</button>
-          <button class="arcade-tab-btn" id="tabArcadeMining" data-src="mining/index.html">⛏️ Deep Core</button>
-          <button class="arcade-tab-btn" id="tabArcadeGolf" data-src="golf/index.html">⛳ Quantum Golf</button>
-          <button class="arcade-tab-btn" id="tabArcadeFighter" data-src="fighter/index.html">🥊 Cyber Brawler</button>
-          <button class="arcade-tab-btn" id="tabArcadeStealth" data-src="stealth/index.html">🕵️ Ghost Protocol</button>
-          <button class="arcade-tab-btn" id="tabArcadeBomber" data-src="bomber/index.html">💣 Grid Detonator</button>
-          <button class="arcade-tab-btn" id="tabArcadePacman" data-src="pacman/index.html">👾 Quantum Maze</button>
-          <button class="arcade-tab-btn" id="tabArcadeTycoon" data-src="tycoon/index.html">⚡ City Tycoon</button>
-          <button class="arcade-tab-btn" id="tabArcadeTetris" data-src="tetris/index.html">🧱 Quantum Fall</button>
+        <span class="arcade-tag">ARCADE HUD</span>
+        <div class="arcade-game-hud">
+          <strong id="activeGameTitle">🏎️ Turbo Drive</strong>
+          <span class="active-game-badge" id="activeGameControls">Controls: ← → / A D + Space</span>
+        </div>
+        <!-- Real-Time Background Queue Progress HUD -->
+        <div class="arcade-queue-hud" id="arcadeQueueHud" style="display:none;" title="Background MetaClean queue status">
+          <span class="pulse-indicator"></span>
+          <span id="arcadeQueueText">Scrubbing in background…</span>
         </div>
       </div>
       <div class="arcade-modal-actions">
+        <div class="arcade-switch-box">
+          <select id="arcadeQuickSelect" class="arcade-select-dropdown" aria-label="Select Game">
+            <!-- Dynamically populated with all 29 games grouped by category -->
+          </select>
+        </div>
+        <button type="button" id="arcadeReloadBtn" class="arcade-action-btn" title="Restart Game [R]">🔄 Restart</button>
+        <button type="button" id="arcadeRandomBtn" class="arcade-action-btn" title="Random Next Game">🎲 Random</button>
+        <button type="button" id="arcadeFavBtn" class="arcade-action-btn fav-btn" title="Favorite Game">🤍</button>
+        <button type="button" id="arcadeFullscreenBtn" class="arcade-action-btn" title="Toggle Fullscreen">⛶ Fullscreen</button>
         <a id="arcadeTabLink" href="game/index.html" target="_blank" rel="noopener noreferrer" class="arcade-action-btn" title="Open in new tab">Full Tab ↗</a>
         <button id="closeArcadeBtn" class="arcade-action-btn close-btn" title="Close Arcade [Esc]">✕</button>
       </div>
+    </div>
+    <div class="arcade-tab-bar" id="arcadeTabBar">
+      <!-- 29 quick-tab buttons so the existing quick switcher still works smoothly -->
     </div>
     <div class="arcade-modal-body">
       <iframe id="arcadeIframe" src="about:blank" data-src="game/index.html" class="arcade-iframe" title="Cyber Arcade Game" allow="autoplay; fullscreen"></iframe>
@@ -296,44 +286,54 @@
     </p>
   </section>
 
-  <!-- Arcade Banner Section (29 Games) -->
-  <section class="arcade-banner-section">
+  <!-- Interactive Cyber Arcade Pavilion (29 Games) -->
+  <section class="arcade-banner-section" id="arcadePavilion">
     <div class="arcade-banner-card">
-      <div class="arcade-banner-content">
-        <span class="arcade-banner-tag">BUILT-IN RETRO ARCADE CABINET — 29 HIGH-OCTANE GAMES</span>
-        <h2>Take a breather with our 29-Game Cyber Arcade Cabinet!</h2>
-        <p>Enjoy twenty-nine studio-grade browser games with rich gameplay depth, roguelike loops, bullet deflection, Mode-7 pseudo-3D curves, tactical deckbuilding, and Web Audio synthesizers: from high-octane <strong>Turbo Drive</strong> & <strong>Cyber Drift</strong>, to mind-bending <strong>Quantum Portal</strong> & <strong>Cyber Circuit</strong>, roguelike dungeon crawling in <strong>Neon Rogue</strong> & <strong>Cyber Survivor</strong>, tactical tower defense in <strong>Matrix Defense</strong>, deep deck duels in <strong>Cyber Deck</strong>, action slashing in <strong>Neon Shinobi</strong>, match-3 RPG spellcasting in <strong>Neon Alchemist</strong>, authentic physics in <strong>Quantum Pinball</strong>, and 2.5D flight dogfights in <strong>Aero Striker</strong>.</p>
-        <div class="arcade-banner-btns">
-          <button id="arcadeBannerBtn" class="primary-arcade-btn">🏎️ Turbo Drive</button>
-          <button id="arcadePuzzleBtn" class="primary-arcade-btn puzzle-btn">🧩 Cyber Circuit</button>
-          <button id="arcadeBreakerBtn" class="primary-arcade-btn breaker-btn">🧱 Neon Breaker</button>
-          <button id="arcadeStrikeBtn" class="primary-arcade-btn strike-btn">🚀 Cyber Strike</button>
-          <button id="arcadeSnakeBtn" class="primary-arcade-btn snake-btn">🐍 Neon Snake</button>
-          <button id="arcadeJumpBtn" class="primary-arcade-btn jump-btn">🦘 Quantum Jump</button>
-          <button id="arcadePulseBtn" class="primary-arcade-btn pulse-btn">🎵 Cyber Pulse</button>
-          <button id="arcadeRunnerBtn" class="primary-arcade-btn runner-btn">⚡ Gravity Runner</button>
-          <button id="arcadeDefenseBtn" class="primary-arcade-btn defense-btn">🛡️ Neon Defense</button>
-          <button id="arcadeSurvivorBtn" class="primary-arcade-btn survivor-btn">🧬 Cyber Survivor</button>
-          <button id="arcadePortalBtn" class="primary-arcade-btn portal-btn">🌀 Quantum Portal</button>
-          <button id="arcadeRogueBtn" class="primary-arcade-btn rogue-btn">🗡️ Neon Rogue</button>
-          <button id="arcadeTowerBtn" class="primary-arcade-btn tower-btn">🏰 Matrix Defense</button>
-          <button id="arcadeKartBtn" class="primary-arcade-btn kart-btn">🏎️ Cyber Drift</button>
-          <button id="arcadeMatchBtn" class="primary-arcade-btn match-btn">✨ Neon Alchemist</button>
-          <button id="arcadePinballBtn" class="primary-arcade-btn pinball-btn">⚡ Quantum Pinball</button>
-          <button id="arcadeShinobiBtn" class="primary-arcade-btn shinobi-btn">⚔️ Neon Shinobi</button>
-          <button id="arcadeDeckBtn" class="primary-arcade-btn deck-btn">🃏 Cyber Deck</button>
-          <button id="arcadeFlightBtn" class="primary-arcade-btn flight-btn">✈️ Aero Striker</button>
-          <button id="arcadeBilliardsBtn" class="primary-arcade-btn billiards-btn">🎱 Neon Pool</button>
-          <button id="arcadeTacticsBtn" class="primary-arcade-btn tactics-btn">🤖 Mech Warfare</button>
-          <button id="arcadeMiningBtn" class="primary-arcade-btn mining-btn">⛏️ Deep Core</button>
-          <button id="arcadeGolfBtn" class="primary-arcade-btn golf-btn">⛳ Quantum Golf</button>
-          <button id="arcadeFighterBtn" class="primary-arcade-btn fighter-btn">🥊 Cyber Brawler</button>
-          <button id="arcadeStealthBtn" class="primary-arcade-btn stealth-btn">🕵️ Ghost Protocol</button>
-          <button id="arcadeBomberBtn" class="primary-arcade-btn bomber-btn">💣 Grid Detonator</button>
-          <button id="arcadePacmanBtn" class="primary-arcade-btn pacman-btn">👾 Quantum Maze</button>
-          <button id="arcadeTycoonBtn" class="primary-arcade-btn tycoon-btn">⚡ City Tycoon</button>
-          <button id="arcadeTetrisBtn" class="primary-arcade-btn tetris-btn">🧱 Quantum Fall</button>
+      <div class="arcade-pavilion-top">
+        <div class="arcade-banner-content">
+          <div class="arcade-top-badge-row">
+            <span class="arcade-banner-tag">29-GAME CYBER ARCADE PAVILION</span>
+            <span class="arcade-zero-lag-tag">⚡ 100% OFFLINE • ZERO SERVERS</span>
+          </div>
+          <h2>Play 29 Studio-Grade Retro & Cyber Games While Files Scrub</h2>
+          <p>Zero network lag. Enjoy twenty-nine studio-grade browser games with rich gameplay depth, roguelike loops, bullet deflection, Mode-7 pseudo-3D curves, tactical deckbuilding, and Web Audio synthesizers: from high-octane <strong>Turbo Drive</strong> & <strong>Cyber Drift</strong>, to mind-bending <strong>Quantum Portal</strong> & <strong>Cyber Circuit</strong>, roguelike dungeon crawling in <strong>Neon Rogue</strong> & <strong>Cyber Survivor</strong>, tactical tower defense in <strong>Matrix Defense</strong>, deep deck duels in <strong>Cyber Deck</strong>, action slashing in <strong>Neon Shinobi</strong>, match-3 RPG spellcasting in <strong>Neon Alchemist</strong>, authentic physics in <strong>Quantum Pinball</strong>, and 2.5D flight dogfights in <strong>Aero Striker</strong>.</p>
         </div>
+        <div class="arcade-pavilion-actions">
+          <button type="button" id="btnArcadeRandom" class="primary-arcade-btn random-btn">
+            🎲 Surprise Me (Random Game)
+          </button>
+          <button type="button" id="btnArcadeMaster" class="primary-arcade-btn master-btn">
+            🎮 Open Master Cabinet
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls & Filter Toolbar -->
+      <div class="arcade-toolbar">
+        <div class="arcade-category-chips" id="arcadeCategoryChips">
+          <button type="button" class="arcade-cat-chip active" data-cat="all">🕹️ All Games (29)</button>
+          <button type="button" class="arcade-cat-chip" data-cat="featured">🔥 Featured</button>
+          <button type="button" class="arcade-cat-chip" data-cat="action">💥 Action & Combat (8)</button>
+          <button type="button" class="arcade-cat-chip" data-cat="racing">🏎️ Racing & Speed (3)</button>
+          <button type="button" class="arcade-cat-chip" data-cat="classic">🧱 Retro Classics (6)</button>
+          <button type="button" class="arcade-cat-chip" data-cat="puzzle">🧩 Puzzle & Logic (4)</button>
+          <button type="button" class="arcade-cat-chip" data-cat="strategy">🏰 Strategy & RPG (5)</button>
+          <button type="button" class="arcade-cat-chip" data-cat="favorites">❤️ Favorites (<span id="arcadeFavBadge">0</span>)</button>
+        </div>
+        <div class="arcade-search-wrap">
+          <input type="text" id="arcadeSearchInput" class="arcade-search-input" placeholder="🔍 Search 29 games by name, genre, controls..." aria-label="Search arcade games">
+        </div>
+      </div>
+
+      <!-- Recently Played Row (Appears when user has played games) -->
+      <div id="arcadeRecentRow" class="arcade-recent-row hidden">
+        <span class="recent-tag">⚡ RECENTLY PLAYED:</span>
+        <div class="recent-list" id="arcadeRecentList"></div>
+      </div>
+
+      <!-- 29-Game Responsive Grid -->
+      <div class="arcade-games-grid" id="arcadeGamesGrid">
+        <!-- Rendered dynamically by app.js -->
       </div>
     </div>
   </section>
