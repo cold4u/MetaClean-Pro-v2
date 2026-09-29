@@ -1038,3 +1038,174 @@ main {
   border-radius: 6px;
 }
 
+/* ── Inline Radar / OpenStreetMap Frame ── */
+.inline-map-box {
+  margin-top: 12px;
+  background: var(--panel2);
+  border: 1px solid rgba(255, 59, 105, 0.4);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(255, 59, 105, 0.15);
+}
+.map-radar-header {
+  padding: 8px 12px;
+  background: rgba(255, 59, 105, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff6b8b;
+  border-bottom: 1px solid rgba(255, 59, 105, 0.25);
+}
+.map-radar-header a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  font-size: 11px;
+}
+.map-radar-header a:hover { text-decoration: underline; }
+.inline-map-frame {
+  width: 100%;
+  height: 220px;
+  border: none;
+  display: block;
+  background: #111420;
+}
+
+/* ── Visual Diff Quality Slider ── */
+.diff-slider-container {
+  margin-top: 14px;
+  background: #06070a;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+.diff-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.diff-slider-wrap {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  user-select: none;
+}
+.diff-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.diff-img-before-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 50%;
+  overflow: hidden;
+  border-right: 2px solid var(--accent-cyan);
+  box-shadow: 2px 0 10px rgba(0, 240, 255, 0.5);
+  z-index: 2;
+}
+.diff-img-before-wrap .diff-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.diff-tag {
+  position: absolute;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  z-index: 3;
+}
+.diff-tag.before {
+  left: 8px;
+  background: rgba(255, 59, 105, 0.85);
+  color: #fff;
+}
+.diff-tag.after {
+  right: 8px;
+  background: rgba(56, 226, 157, 0.85);
+  color: #05070a;
+}
+.diff-range-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: ew-resize;
+  z-index: 4;
+}
+
+/* ── Cryptographic SHA-256 Hashes & Audit Report ── */
+.hash-audit-card {
+  margin-top: 12px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.hash-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.hash-lbl {
+  color: var(--muted);
+  font-size: 10px;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+.hash-val {
+  color: #93c5fd;
+  word-break: break-all;
+}
+.hash-val.clean { color: var(--green); }
+.btn-audit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(121, 82, 255, 0.15);
+  border: 1px solid rgba(121, 82, 255, 0.35);
+  color: #c4b5fd;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.15s ease;
+}
+.btn-audit:hover {
+  background: rgba(121, 82, 255, 0.25);
+  color: #fff;
+}
+
+/* ── Web Share Button ── */
+.btn-share {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+.btn-share:hover { background: rgba(56, 189, 248, 0.25); }
+
+

@@ -1,5 +1,5 @@
 /**
- * MetaClean Pro v2.2 — Core Metadata Forensics & Zero-Loss Sanitization Engine
+ * MetaClean Pro v2.3 — Core Metadata Forensics & Zero-Loss Sanitization Engine
  * 100% Client-Side. Zero Dependencies. Zero Network Transmission.
  */
 (function(root) {
@@ -499,6 +499,9 @@
     // Initial Hex Preview
     const hexDump = generateHexDump(buf, 128);
 
+    // Cryptographic Hash
+    const sha256 = await computeSha256(file);
+
     return {
       format,
       fields: uniqueFields,
@@ -507,6 +510,7 @@
       forensicDetails,
       provenance,
       hexDump,
+      sha256,
       originalSize: file.size
     };
   }
@@ -985,6 +989,7 @@
     const cleanRawBuf = new Uint8Array(await cleanBlob.slice(0, 128).arrayBuffer());
     const cleanHexDump = generateHexDump(cleanRawBuf, 128);
     const verifyScan = await scanFile(new File([cleanBlob], file.name, { type: cleanBlob.type }));
+    const cleanSha256 = await computeSha256(cleanBlob);
 
     return {
       cleanBlob,
@@ -996,8 +1001,29 @@
       afterFields: verifyScan.fields,
       format: scan.format,
       cleanHexDump,
+      sourceSha256: scan.sha256,
+      cleanSha256,
       isClean: verifyScan.fields.length === 0
     };
+  }
+
+  /**
+   * Cryptographic SHA-256 Hasher
+   */
+  async function computeSha256(data) {
+    try {
+      let buf;
+      if (data instanceof ArrayBuffer) buf = data;
+      else if (data instanceof Uint8Array) buf = data.buffer;
+      else if (data instanceof Blob) buf = await data.arrayBuffer();
+      else buf = new TextEncoder().encode(String(data));
+
+      const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+      const hashArr = Array.from(new Uint8Array(hashBuf));
+      return hashArr.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (_) {
+      return 'N/A';
+    }
   }
 
   // Export
@@ -1016,8 +1042,10 @@
     cleanImageRaster,
     generateHexDump,
     detectProvenance,
+    computeSha256,
     fmtSize,
     esc
   };
 
 })(typeof window !== 'undefined' ? window : globalThis);
+
