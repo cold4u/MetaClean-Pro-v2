@@ -144,6 +144,7 @@
     <div class="queue-header">
       <div class="queue-tabs">
         <button class="queue-tab active" data-filter="all">All Files (<span id="tabCountAll">0</span>)</button>
+        <button class="queue-tab" data-filter="ai">🤖 AI Images (<span id="tabCountAi">0</span>)</button>
         <button class="queue-tab" data-filter="image">Images (<span id="tabCountImage">0</span>)</button>
         <button class="queue-tab" data-filter="audio">Audio (<span id="tabCountAudio">0</span>)</button>
         <button class="queue-tab" data-filter="pdf">PDF (<span id="tabCountPdf">0</span>)</button>
@@ -184,6 +185,9 @@
         </div>
       </div>
       <div class="batch-actions">
+        <button id="cleanAiBtn" class="btn btn-ai-purge" style="display:none;" onclick="cleanAllAiFiles()">
+          <span>🤖 Scrub AI Fingerprints</span>
+        </button>
         <button id="cleanAllBtn" class="btn btn-primary">
           <span>⚡ Clean All Files</span>
         </button>

@@ -296,12 +296,14 @@
           <div class="file-name-row">
             <span class="file-title" id="title_${entry.id}" title="${window.MetaCleanEngine.esc(entry.file.name)}">${window.MetaCleanEngine.esc(entry.file.name)}</span>
             <span class="format-tag" id="fmt_${entry.id}">Scanning</span>
+            <span class="ai-pill" id="aiPill_${entry.id}" style="display:none;"></span>
             <span class="threat-pill clean" id="threat_${entry.id}">Scanning…</span>
             <span class="grade-badge" id="grade_${entry.id}" style="display:none;"></span>
           </div>
           <div class="file-meta-sub">
             <span class="size-stat" id="size_${entry.id}">${window.MetaCleanEngine.fmtSize(entry.file.size)}</span>
             <span id="tagsCount_${entry.id}">Scanning metadata…</span>
+            <span class="ai-status-note" id="aiNote_${entry.id}" style="display:none;"></span>
           </div>
         </div>
         <div class="file-actions-col">
@@ -338,9 +340,44 @@
     // Apply filter visibility
     applyFilterToCard(card, entry.format);
 
-    // Threat level styling
+    // Threat level styling & AI detection card class
     const threatClass = `threat-${entry.scan?.threatLevel || 'clean'}`;
-    card.className = `file-card ${threatClass} ${entry.cleanResult ? 'cleaned' : ''}`;
+    const isAi = !!entry.scan?.aiData;
+    const aiClass = isAi ? (entry.cleanResult ? 'ai-card-cleaned' : 'ai-card-detected') : '';
+    card.className = `file-card ${threatClass} ${entry.cleanResult ? 'cleaned' : ''} ${aiClass}`.trim();
+
+    // AI Pill & AI Status Note (Instant Zero-Click AI Visibility)
+    const aiPill = $('#aiPill_' + id);
+    const aiNote = $('#aiNote_' + id);
+
+    if (isAi && aiPill) {
+      aiPill.style.display = 'inline-flex';
+      if (entry.cleanResult) {
+        aiPill.className = 'ai-pill cleaned';
+        aiPill.innerHTML = `🛡️ AI Fingerprint Purged`;
+        aiPill.title = 'AI prompt, model seed, workflow graph and parameters permanently erased.';
+      } else {
+        const gen = entry.scan.aiData.generator || 'Model Detected';
+        aiPill.className = 'ai-pill active';
+        aiPill.innerHTML = `🤖 AI Generated: ${window.MetaCleanEngine.esc(gen)}`;
+        aiPill.title = `Embedded prompt, model seeds, and generation parameters detected (${entry.scan.aiData.keyword || 'Manifest'}).`;
+      }
+    } else if (aiPill) {
+      aiPill.style.display = 'none';
+    }
+
+    if (isAi && aiNote) {
+      aiNote.style.display = 'inline-flex';
+      if (entry.cleanResult) {
+        aiNote.className = 'ai-status-note purged';
+        aiNote.innerHTML = `✓ AI prompt, seed & workflow graph eliminated`;
+      } else {
+        aiNote.className = 'ai-status-note warning';
+        aiNote.innerHTML = `⚡ Embedded AI Prompt, Model Seed & Checkpoint Detected`;
+      }
+    } else if (aiNote) {
+      aiNote.style.display = 'none';
+    }
 
     // Thumbnail
     const thumbBox = $('#thumb_' + id);
@@ -463,19 +500,40 @@
     // AI Prompt & Generative Synthesis Forensics
     let aiHtml = '';
     if (entry.scan.aiData) {
-      aiHtml = `
-        <div class="ai-prompt-card">
-          <div class="ai-card-header">
-            <span>🤖 AI Generative Manifest (${window.MetaCleanEngine.esc(entry.scan.aiData.generator)})</span>
-            <span style="font-size:10px; color:#f87171;">⚠️ Embedded Prompt Exposed</span>
+      if (entry.cleanResult) {
+        aiHtml = `
+          <div class="ai-prompt-card cleaned">
+            <div class="ai-card-header clean">
+              <span>🛡️ AI Generative Manifest & Fingerprint: 100% PURGED</span>
+              <span style="font-size:10px; color:var(--green); font-weight:700;">✓ ZERO RESIDUAL MODEL MARKERS</span>
+            </div>
+            <div class="ai-purged-summary">
+              <div class="purged-check-item"><span>✓ Generation Prompt & Negative Prompt:</span> <strong>PERMANENTLY REMOVED (0 Bytes)</strong></div>
+              <div class="purged-check-item"><span>✓ Model Seeds, Sampler & Step Counts:</span> <strong>PERMANENTLY REMOVED</strong></div>
+              <div class="purged-check-item"><span>✓ Model Checkpoint Hashes & LoRA Weights:</span> <strong>PERMANENTLY REMOVED</strong></div>
+              <div class="purged-check-item"><span>✓ Workflow Graph (${window.MetaCleanEngine.esc(entry.scan.aiData.generator)}):</span> <strong>PERMANENTLY REMOVED</strong></div>
+            </div>
+            <div class="ai-actions-row">
+              <span style="color:#94a3b8;">Lossless binary sanitization stripped all tEXt, zTXt, iTXt, EXIF, COM, and XMP generative chunks.</span>
+              <span class="badge-purged-pill">VERIFIED CLEAN</span>
+            </div>
           </div>
-          <div class="ai-prompt-box" id="aiPrompt_${entry.id}">${window.MetaCleanEngine.esc(entry.scan.aiData.prompt)}</div>
-          <div class="ai-actions-row">
-            <span>Model parameters, seeds, and workflow will be permanently wiped.</span>
-            <button type="button" class="btn-copy-prompt" onclick="copyAiPrompt('${entry.id}')">📋 Copy Generation Prompt</button>
+        `;
+      } else {
+        aiHtml = `
+          <div class="ai-prompt-card">
+            <div class="ai-card-header">
+              <span>🤖 AI Generative Manifest (${window.MetaCleanEngine.esc(entry.scan.aiData.generator)})</span>
+              <span style="font-size:10px; color:#f87171; font-weight:700;">⚠️ Embedded Prompt Exposed</span>
+            </div>
+            <div class="ai-prompt-box" id="aiPrompt_${entry.id}">${window.MetaCleanEngine.esc(entry.scan.aiData.prompt)}</div>
+            <div class="ai-actions-row">
+              <span>Model parameters, seeds, and workflow will be permanently wiped upon cleaning.</span>
+              <button type="button" class="btn-copy-prompt" onclick="copyAiPrompt('${entry.id}')">📋 Copy Generation Prompt</button>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
     }
 
     // Tags Grid with Live Search Filter
@@ -1000,17 +1058,59 @@
     downloadZipBtn.disabled = cleaned === 0;
 
     // Filter tab counts
+    const aiCount = Array.from(queue.values()).filter(e => !!e.scan?.aiData).length;
+    const aiUncleaned = Array.from(queue.values()).filter(e => !!e.scan?.aiData && !e.cleanResult).length;
     const images = Array.from(queue.values()).filter(e => ['jpeg','png','webp','svg'].includes(e.format)).length;
     const audios = Array.from(queue.values()).filter(e => ['mp3','flac','wav'].includes(e.format)).length;
     const pdfs = Array.from(queue.values()).filter(e => e.format === 'pdf').length;
     const videos = Array.from(queue.values()).filter(e => e.format === 'mp4').length;
 
     $('#tabCountAll').textContent = total;
+    if ($('#tabCountAi')) $('#tabCountAi').textContent = aiCount;
     $('#tabCountImage').textContent = images;
     $('#tabCountAudio').textContent = audios;
     $('#tabCountPdf').textContent = pdfs;
     $('#tabCountVideo').textContent = videos;
+
+    const cleanAiBtn = $('#cleanAiBtn');
+    if (cleanAiBtn) {
+      if (aiCount > 0) {
+        cleanAiBtn.style.display = 'inline-flex';
+        cleanAiBtn.disabled = (aiUncleaned === 0);
+        cleanAiBtn.innerHTML = `<span>🤖 Scrub AI Fingerprints (${aiUncleaned})</span>`;
+      } else {
+        cleanAiBtn.style.display = 'none';
+      }
+    }
   }
+
+  // Batch Clean All AI Files
+  window.cleanAllAiFiles = async function() {
+    const aiPending = Array.from(queue.values()).filter(e => !!e.scan?.aiData && !e.cleanResult);
+    if (!aiPending.length) return;
+
+    batchProgressContainer.classList.remove('hidden');
+    const cleanAiBtn = $('#cleanAiBtn');
+    if (cleanAiBtn) cleanAiBtn.disabled = true;
+
+    for (let i = 0; i < aiPending.length; i++) {
+      const e = aiPending[i];
+      const pct = Math.round(((i + 1) / aiPending.length) * 100);
+      progressStateText.textContent = `Scrubbing AI Fingerprint from ${e.file.name} (${i + 1}/${aiPending.length})…`;
+      progressPercentText.textContent = pct + '%';
+      batchProgressBar.style.width = pct + '%';
+
+      await window.cleanSingle(e.id);
+    }
+
+    progressStateText.textContent = 'All AI generative fingerprints purged!';
+    setTimeout(() => {
+      batchProgressContainer.classList.add('hidden');
+    }, 1800);
+
+    if (cleanAiBtn) cleanAiBtn.disabled = false;
+    updateMetrics();
+  };
 
   function showVerification() {
     const cleanedEntries = Array.from(queue.values()).filter(e => e.cleanResult);
@@ -1051,6 +1151,10 @@
   function applyFilterToCard(card, format) {
     if (activeFilter === 'all') {
       card.style.display = '';
+    } else if (activeFilter === 'ai') {
+      const entryId = card.id.replace('card_', '');
+      const entry = queue.get(entryId);
+      card.style.display = (entry && entry.scan?.aiData) ? '' : 'none';
     } else if (activeFilter === 'image') {
       card.style.display = ['jpeg','png','webp','svg'].includes(format) ? '' : 'none';
     } else if (activeFilter === 'audio') {

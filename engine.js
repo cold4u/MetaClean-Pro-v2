@@ -148,6 +148,22 @@
         } else if (tag === 0x0110 && strVal) { // Model
           fields.push({ category: 'Hardware', label: 'Camera Model', value: strVal, threat: 'high' });
           forensicDetails.cameraModel = strVal;
+        } else if (tag === 0x010E && strVal) { // ImageDescription
+          fields.push({ category: 'Document', label: 'Image Description', value: strVal.slice(0, 100), threat: 'med' });
+          if (/Negative prompt:|Steps:\s*\d+|Sampler:\s*|Seed:\s*\d+|DALL-E|Midjourney|Stable Diffusion|ComfyUI|Fooocus|NovelAI/i.test(strVal)) {
+            let gen = 'Stable Diffusion';
+            if (/midjourney/i.test(strVal)) gen = 'Midjourney';
+            else if (/dall-e/i.test(strVal)) gen = 'DALL-E';
+            else if (/comfyui/i.test(strVal)) gen = 'ComfyUI';
+            else if (/novelai/i.test(strVal)) gen = 'NovelAI';
+            else if (/fooocus/i.test(strVal)) gen = 'Fooocus';
+            forensicDetails.aiData = forensicDetails.aiData || {
+              generator: gen,
+              prompt: strVal.slice(0, 2500).replace(/[^\x20-\x7E\r\n\t]/g, ''),
+              keyword: 'ImageDescription (EXIF)'
+            };
+            fields.push({ category: 'AI Forensics', label: `AI Prompt in EXIF (${gen})`, value: 'Embedded prompt in ImageDescription', threat: 'high' });
+          }
         } else if (tag === 0x0131 && strVal) { // Software
           fields.push({ category: 'System', label: 'Software / OS', value: strVal, threat: 'med' });
           forensicDetails.software = strVal;
@@ -165,7 +181,33 @@
         }
 
         if (isSubExif) {
-          if (tag === 0x9003 && strVal) { // DateTimeOriginal
+          if (tag === 0x9286) { // UserComment
+            let commentStr = '';
+            const cOff = cnt > 4 ? tiffStart + valOffset : valOffset;
+            if (cOff < dv.byteLength) {
+              const maxL = Math.min(cnt, dv.byteLength - cOff);
+              const u8 = new Uint8Array(dv.buffer, dv.byteOffset + cOff, maxL);
+              const isAsciiHdr = maxL >= 8 && readAscii(u8, 0, 5) === 'ASCII';
+              const startIdx = isAsciiHdr ? 8 : 0;
+              commentStr = readAscii(u8, startIdx, maxL - startIdx);
+            }
+            if (commentStr) {
+              fields.push({ category: 'Comments', label: 'EXIF UserComment', value: commentStr.slice(0, 100), threat: 'med' });
+              if (/Negative prompt:|Steps:\s*\d+|Sampler:\s*|Seed:\s*\d+|DALL-E|Midjourney|Stable Diffusion|ComfyUI|Fooocus|NovelAI/i.test(commentStr)) {
+                let gen = 'Stable Diffusion';
+                if (/midjourney/i.test(commentStr)) gen = 'Midjourney';
+                else if (/dall-e/i.test(commentStr)) gen = 'DALL-E';
+                else if (/comfyui/i.test(commentStr)) gen = 'ComfyUI';
+                else if (/novelai/i.test(commentStr)) gen = 'NovelAI';
+                forensicDetails.aiData = forensicDetails.aiData || {
+                  generator: gen,
+                  prompt: commentStr.slice(0, 2500).replace(/[^\x20-\x7E\r\n\t]/g, ''),
+                  keyword: 'UserComment (EXIF)'
+                };
+                fields.push({ category: 'AI Forensics', label: `AI Prompt in UserComment (${gen})`, value: 'Embedded parameters in EXIF UserComment', threat: 'high' });
+              }
+            }
+          } else if (tag === 0x9003 && strVal) { // DateTimeOriginal
             fields.push({ category: 'Time', label: 'Capture Date/Time', value: strVal, threat: 'high' });
             forensicDetails.captureDate = strVal;
           } else if (tag === 0x829A) { // ExposureTime
@@ -349,13 +391,18 @@
             parseTiff(dv, p + 10, fields, forensicDetails);
           } else if (/http:\/\/ns\.adobe\.com\/xap/i.test(segText)) {
             fields.push({ category: 'Structure', label: 'XMP Extensible Metadata', value: `Adobe XML Stream (${len} bytes)`, threat: 'med' });
-            if (/Midjourney|DALL-E|Adobe Firefly|Stable Diffusion/i.test(segText)) {
-              const aiMatch = segText.match(/(Midjourney|DALL-E|Adobe Firefly|Stable Diffusion)/i);
+            if (/Midjourney|DALL-E|Adobe Firefly|Stable Diffusion|ComfyUI|NovelAI|InvokeAI|Fooocus/i.test(segText)) {
+              const aiMatch = segText.match(/(Midjourney|DALL-E|Adobe Firefly|Stable Diffusion|ComfyUI|NovelAI|InvokeAI|Fooocus)/i);
               if (aiMatch) {
+                let promptExtract = '';
+                const descMatch = segText.match(/<dc:description>[\s\S]*?<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/i) ||
+                                  segText.match(/description="([^"]+)"/i) ||
+                                  segText.match(/prompt="([^"]+)"/i);
+                if (descMatch && descMatch[1]) promptExtract = descMatch[1].trim();
                 forensicDetails.aiData = forensicDetails.aiData || {
                   generator: aiMatch[0],
-                  prompt: 'AI generation model credentials and provenance manifest embedded in XMP.',
-                  keyword: 'XMP'
+                  prompt: promptExtract || `AI generative manifest and model parameters embedded in XMP (${aiMatch[0]}).`,
+                  keyword: 'XMP Segment'
                 };
                 fields.push({ category: 'AI Forensics', label: `AI Manifest (${aiMatch[0]})`, value: 'Model parameters & generation credentials', threat: 'high' });
               }
@@ -368,6 +415,19 @@
         } else if (marker === 0xFE) {
           const com = readAscii(buf, p + 4, len - 2);
           fields.push({ category: 'Comments', label: 'JPEG User Comment (COM)', value: com || 'Embedded string comment', threat: 'med' });
+          if (/Negative prompt:|Steps:\s*\d+|Sampler:\s*|Seed:\s*\d+|DALL-E|Midjourney|Stable Diffusion|ComfyUI|Fooocus|NovelAI/i.test(com)) {
+            let gen = 'Stable Diffusion';
+            if (/midjourney/i.test(com)) gen = 'Midjourney';
+            else if (/dall-e/i.test(com)) gen = 'DALL-E';
+            else if (/comfyui/i.test(com)) gen = 'ComfyUI';
+            else if (/novelai/i.test(com)) gen = 'NovelAI';
+            forensicDetails.aiData = forensicDetails.aiData || {
+              generator: gen,
+              prompt: com.slice(0, 2500).replace(/[^\x20-\x7E\r\n\t]/g, ''),
+              keyword: 'COM Segment'
+            };
+            fields.push({ category: 'AI Forensics', label: `AI Prompt in JPEG Comment (${gen})`, value: 'Embedded prompt in COM marker', threat: 'high' });
+          }
         }
         p += 2 + len;
       }
@@ -389,14 +449,23 @@
           const val = fullText.slice(0, 80).replace(/[^\x20-\x7E]/g, '');
           fields.push({ category: 'Identity', label: `PNG ${typ} [${kw}]`, value: val || 'Metadata text payload', threat: 'high' });
 
-          // Extract AI generation metadata & prompts (Stable Diffusion, Midjourney, ComfyUI, NovelAI)
-          if (['parameters', 'prompt', 'workflow', 'Dream', 'sd-metadata'].includes(kw) || /Negative prompt:|Steps:\s*\d+/i.test(fullText)) {
+          // Extract AI generation metadata & prompts (Stable Diffusion, Midjourney, ComfyUI, NovelAI, Fooocus, InvokeAI)
+          if (['parameters', 'prompt', 'workflow', 'Dream', 'sd-metadata', 'generation_data', 'Comment'].includes(kw) ||
+              /Negative prompt:|Steps:\s*\d+|Sampler:\s*|Seed:\s*\d+|DALL-E|Midjourney|comfyui|novelai|fooocus/i.test(fullText)) {
+            let gen = 'Stable Diffusion';
+            if (kw === 'workflow' || /comfyui/i.test(fullText)) gen = 'ComfyUI';
+            else if (/novelai/i.test(fullText)) gen = 'NovelAI';
+            else if (/fooocus/i.test(fullText)) gen = 'Fooocus';
+            else if (/midjourney/i.test(fullText)) gen = 'Midjourney';
+            else if (/dall-e/i.test(fullText)) gen = 'DALL-E';
+            else if (/invokeai/i.test(fullText)) gen = 'InvokeAI';
+
             forensicDetails.aiData = {
-              generator: kw === 'workflow' ? 'ComfyUI' : 'Stable Diffusion / NovelAI',
-              prompt: fullText.slice(0, 2000).replace(/[^\x20-\x7E\r\n\t]/g, ''),
+              generator: gen,
+              prompt: fullText.slice(0, 2500).replace(/[^\x20-\x7E\r\n\t]/g, ''),
               keyword: kw
             };
-            fields.push({ category: 'AI Forensics', label: 'AI Generation Prompt & Parameters', value: `Embedded ${kw} manifest (${chunkLen} bytes)`, threat: 'high' });
+            fields.push({ category: 'AI Forensics', label: `AI Generation Prompt & Parameters (${gen})`, value: `Embedded ${kw} manifest (${chunkLen} bytes)`, threat: 'high' });
           }
         } else if (typ === 'eXIf') {
           fields.push({ category: 'Structure', label: 'PNG EXIF Chunk', value: `${chunkLen} bytes raw EXIF payload`, threat: 'high' });
@@ -423,6 +492,18 @@
           parseTiff(dv, p + 8, fields, forensicDetails);
         } else if (fourCC === 'XMP ') {
           fields.push({ category: 'Structure', label: 'WebP XMP Chunk', value: 'Extensible metadata stream', threat: 'med' });
+          const xmpText = readAscii(buf, p + 8, chunkLen);
+          if (/Midjourney|DALL-E|Adobe Firefly|Stable Diffusion|ComfyUI|NovelAI/i.test(xmpText)) {
+            const aiMatch = xmpText.match(/(Midjourney|DALL-E|Adobe Firefly|Stable Diffusion|ComfyUI|NovelAI)/i);
+            if (aiMatch) {
+              forensicDetails.aiData = forensicDetails.aiData || {
+                generator: aiMatch[0],
+                prompt: `AI generation model credentials embedded in WebP XMP (${aiMatch[0]}).`,
+                keyword: 'WebP XMP'
+              };
+              fields.push({ category: 'AI Forensics', label: `AI Manifest (${aiMatch[0]})`, value: 'Model parameters in WebP XMP', threat: 'high' });
+            }
+          }
         }
         p += 8 + ((chunkLen + 1) & ~1); // 2-byte aligned
       }
@@ -1072,6 +1153,7 @@
       cleanHexDump,
       sourceSha256: scan.sha256,
       cleanSha256,
+      aiFingerprintPurged: (!!scan.aiData && !verifyScan.aiData),
       isClean: verifyScan.fields.length === 0
     };
   }
