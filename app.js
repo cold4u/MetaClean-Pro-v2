@@ -1673,6 +1673,10 @@
   const arcadeRecentRow = $("#arcadeRecentRow");
   const arcadeRecentList = $("#arcadeRecentList");
   const arcadeFavBadge = $("#arcadeFavBadge");
+  const arcadeCrtBtn = $("#arcadeCrtBtn");
+  const arcadeMuteBtn = $("#arcadeMuteBtn");
+  const arcadeCrtOverlay = $("#arcadeCrtOverlay");
+  const arcadeHintText = $("#arcadeHintText");
 
   // Rich 29-Game Master Dataset
   const arcadeGames = [
@@ -1682,9 +1686,11 @@
       emoji: "🏎️",
       category: "racing",
       categoryLabel: "Racing & Speed",
+      difficulty: "★★☆☆ Medium",
       tag: "Mode-7 Pseudo-3D",
       desc: "High-octane outrun highway racer with speed boosts, traffic weaving, and synthwave beats.",
       controls: "← → or A/D to steer • Space for Nitro",
+      proTip: "Weave closely behind traffic to draft and build turbo nitro, then tap Space to break the sound barrier.",
       featured: true,
       path: "game/index.html"
     },
@@ -1694,9 +1700,11 @@
       emoji: "🧩",
       category: "puzzle",
       categoryLabel: "Puzzle & Logic",
+      difficulty: "★★☆☆ Casual",
       tag: "Logic Network",
       desc: "Connect neon energy conduits and route power to the main quantum core without short-circuiting.",
       controls: "Click/Tap to rotate circuit tiles",
+      proTip: "Rotate 4-way hubs first to stabilize the main power bus before routing branching pathways.",
       featured: false,
       path: "puzzle/index.html"
     },
@@ -1706,9 +1714,11 @@
       emoji: "🧱",
       category: "classic",
       categoryLabel: "Retro Classics",
+      difficulty: "★★★☆ Hard",
       tag: "Arcade Brick Breaker",
       desc: "Futuristic breakout with multiball powerups, explosive lasers, and shifting neon barriers.",
       controls: "Mouse / ← → to slide paddle",
+      proTip: "Angle edge paddle impacts to ricochet the neon ball above the upper brick ceiling for multiball cascades.",
       featured: true,
       path: "breaker/index.html"
     },
@@ -1718,9 +1728,11 @@
       emoji: "🚀",
       category: "action",
       categoryLabel: "Action & Combat",
+      difficulty: "★★★★ Hardcore",
       tag: "Vertical Shmup",
       desc: "Intense vertical space shoot-em-up with plasma cannons, boss battles, and bullet deflections.",
       controls: "WASD / Arrows to fly • Space to fire",
+      proTip: "Squeeze through bullet spiral gaps with micro-taps and conserve smart bombs for capital bosses.",
       featured: true,
       path: "strike/index.html"
     },
@@ -1730,9 +1742,11 @@
       emoji: "🐍",
       category: "classic",
       categoryLabel: "Retro Classics",
+      difficulty: "★☆☆☆ Casual",
       tag: "Grid Arcade",
       desc: "Cyberpunk snake with dimensional warp portals, turbo food pellets, and increasing matrix speed.",
       controls: "Arrow keys / Swipe to turn",
+      proTip: "Patrol perimeter walls in sweeping zig-zags as your matrix trail expands to eliminate dead ends.",
       featured: false,
       path: "snake/index.html"
     },
@@ -1742,9 +1756,11 @@
       emoji: "🦘",
       category: "action",
       categoryLabel: "Action & Combat",
+      difficulty: "★★☆☆ Medium",
       tag: "Vertical Platformer",
       desc: "Infinite neon bounce climber featuring crumbling ledges, gravity springs, and altitude records.",
       controls: "← → or A/D to steer jumper",
+      proTip: "Aim for spring pads and glowing grav-orbs to catapult through collapsing quantum platforms.",
       featured: false,
       path: "jump/index.html"
     },
@@ -1754,9 +1770,11 @@
       emoji: "🎵",
       category: "puzzle",
       categoryLabel: "Puzzle & Logic",
+      difficulty: "★★★☆ Hard",
       tag: "Rhythm Beats",
       desc: "Sync your reflexes to high-energy electronic soundwaves and hit notes at peak tempo.",
       controls: "D, F, J, K or Tap lanes on beat",
+      proTip: "Fixate your eyes halfway up the highway to anticipate upcoming 16th-note multi-lane runs.",
       featured: true,
       path: "pulse/index.html"
     },
@@ -1766,9 +1784,11 @@
       emoji: "⚡",
       category: "action",
       categoryLabel: "Action & Combat",
+      difficulty: "★★★★ Hardcore",
       tag: "Endless Runner",
       desc: "Flip gravity on demand to run along ceilings and floors through razor-sharp cyber obstacles.",
       controls: "Space / Click to invert gravity",
+      proTip: "Trigger gravity flip a split-second before laser gates to slide seamlessly along ceiling conduits.",
       featured: false,
       path: "runner/index.html"
     },
@@ -1778,9 +1798,11 @@
       emoji: "🛡️",
       category: "strategy",
       categoryLabel: "Strategy & RPG",
+      difficulty: "★★★☆ Hard",
       tag: "Orbital Defense",
       desc: "Rotate your orbital defense shield to deflect relentless missile barrages from the city core.",
       controls: "Mouse / Touch to rotate shield",
+      proTip: "Clock shield rotation to intercept high-velocity clusters first, then sweep residual debris.",
       featured: false,
       path: "defense/index.html"
     },
@@ -1790,9 +1812,11 @@
       emoji: "🧬",
       category: "action",
       categoryLabel: "Action & Combat",
+      difficulty: "★★★★ Hardcore",
       tag: "Roguelite Bullet Hell",
       desc: "Survive massive swarms of corrupted drones, level up, and unlock auto-firing laser weaponry.",
       controls: "WASD / Arrows to maneuver",
+      proTip: "Kite corrupted drone swarms in wide clockwise loops while prioritizing plasma blast upgrades.",
       featured: true,
       path: "survivor/index.html"
     },
@@ -1802,9 +1826,11 @@
       emoji: "🌀",
       category: "puzzle",
       categoryLabel: "Puzzle & Logic",
+      difficulty: "★★★☆ Hard",
       tag: "Physics Runner",
       desc: "Manipulate space-time portals to teleport across deadly energy voids and electromagnetic traps.",
       controls: "Arrows to move • Space to warp",
+      proTip: "Fire exit portals onto elevated ramps to convert falling kinetic energy into horizontal speed.",
       featured: false,
       path: "portal/index.html"
     },
@@ -1814,9 +1840,11 @@
       emoji: "🗡️",
       category: "strategy",
       categoryLabel: "Strategy & RPG",
+      difficulty: "★★★★ Hardcore",
       tag: "Dungeon Crawler",
       desc: "Turn-based cyberpunk dungeon crawler with procedural floors, loot drops, and tactical hacking.",
       controls: "WASD / Arrows / Grid Click to move",
+      proTip: "Bypass firewall sentinels through auxiliary vents and hoard EMP charges for rogue boss encounters.",
       featured: true,
       path: "rogue/index.html"
     },
@@ -1826,9 +1854,11 @@
       emoji: "🏰",
       category: "strategy",
       categoryLabel: "Strategy & RPG",
+      difficulty: "★★★☆ Hard",
       tag: "Tower Defense",
       desc: "Deploy and upgrade EMP towers, tesla coils, and laser cannons against armored drone convoys.",
       controls: "Mouse to place and upgrade towers",
+      proTip: "Stack slow cryo-fields right before interlocking tesla coil overlapping kill-zones.",
       featured: false,
       path: "tower/index.html"
     },
@@ -1838,9 +1868,11 @@
       emoji: "🏎️",
       category: "racing",
       categoryLabel: "Racing & Speed",
+      difficulty: "★★☆☆ Medium",
       tag: "Top-Down Drift",
       desc: "Top-down time-attack racer with friction-defying drifts, boost pads, and ghost rivals.",
       controls: "WASD / Arrows • Shift to drift",
+      proTip: "Initiate drift right as you hit the outer apex, then release for instant golden boost acceleration.",
       featured: false,
       path: "kart/index.html"
     },
@@ -1850,9 +1882,11 @@
       emoji: "✨",
       category: "puzzle",
       categoryLabel: "Puzzle & Logic",
+      difficulty: "★☆☆☆ Casual",
       tag: "Match-3 RPG",
       desc: "Match elemental quantum orbs to cast spells, charge plasma attacks, and defeat cyber beasts.",
       controls: "Click & drag adjacent gems to swap",
+      proTip: "Combine L-shaped and 5-gem line configurations to summon hyper-destructive quantum catalysts.",
       featured: false,
       path: "match/index.html"
     },
@@ -1862,9 +1896,11 @@
       emoji: "⚡",
       category: "classic",
       categoryLabel: "Retro Classics",
+      difficulty: "★★★☆ Hard",
       tag: "Physics Pinball",
       desc: "Authentic physics pinball table with neon bumpers, multiball ramps, and high-multiplier lanes.",
       controls: "Z / Left Shift & / / Right Shift for flippers",
+      proTip: "Dead-flipper cradle the ball to steady velocity, then backhand launch up the 10x multiplier ramp.",
       featured: true,
       path: "pinball/index.html"
     },
@@ -1874,9 +1910,11 @@
       emoji: "⚔️",
       category: "action",
       categoryLabel: "Action & Combat",
+      difficulty: "★★★★ Hardcore",
       tag: "Action Slasher",
       desc: "Fast-paced katana action slasher with aerial dashes, parry timing, and holographic bosses.",
       controls: "Arrows • Z to dash • X to slash",
+      proTip: "Dash through projectile waves with invulnerability frames and execute sudden counter-slashes.",
       featured: true,
       path: "shinobi/index.html"
     },
@@ -1886,9 +1924,11 @@
       emoji: "🃏",
       category: "strategy",
       categoryLabel: "Strategy & RPG",
+      difficulty: "★★★☆ Hard",
       tag: "Cyber Deckbuilder",
       desc: "Construct an unstoppable virus deck to breach rogue corporate firewalls in tactical card battles.",
       controls: "Click cards to play with available energy",
+      proTip: "Fortify ICE defenses in opening turns, then cycle malicious payload packets for catastrophic bursts.",
       featured: true,
       path: "deck/index.html"
     },
@@ -1898,9 +1938,11 @@
       emoji: "✈️",
       category: "action",
       categoryLabel: "Action & Combat",
+      difficulty: "★★★☆ Hard",
       tag: "2.5D Dogfighter",
       desc: "Air-to-air dogfighting simulation with afterburners, homing missiles, and acrobatic barrel rolls.",
       controls: "WASD to pitch/bank • Space to fire",
+      proTip: "Perform high-G barrel rolls to break homing missile radar lock, then retaliate with twin cannons.",
       featured: false,
       path: "flight/index.html"
     },
@@ -1910,9 +1952,11 @@
       emoji: "🎱",
       category: "classic",
       categoryLabel: "Retro Classics",
+      difficulty: "★★☆☆ Medium",
       tag: "8-Ball Billiards",
       desc: "Precision neon billiards with trajectory line preview, spin control, and pocket shot physics.",
       controls: "Drag cue backward to set power & release",
+      proTip: "Apply bottom-draw backspin on the cue ball to park ideal angles for subsequent pocket combos.",
       featured: false,
       path: "billiards/index.html"
     },
@@ -1922,9 +1966,11 @@
       emoji: "🤖",
       category: "strategy",
       categoryLabel: "Strategy & RPG",
+      difficulty: "★★★☆ Hard",
       tag: "Turn-Based Tactics",
       desc: "Command a squad of customized combat mechs across an isometric grid with cover mechanics.",
       controls: "Mouse to select unit, move & fire",
+      proTip: "Secure high-ground vantage points with snipers while heavy bipedals provide suppression cover.",
       featured: false,
       path: "tactics/index.html"
     },
@@ -1934,9 +1980,11 @@
       emoji: "⛏️",
       category: "action",
       categoryLabel: "Action & Combat",
+      difficulty: "★★☆☆ Medium",
       tag: "Drilling Adventure",
       desc: "Drill deep into the cybernetic mantle to extract precious ores before battery or heat runs out.",
       controls: "Arrow keys to steer drill & dig",
+      proTip: "Upgrade drill diamond-carbide heads and heat heat-sinks before excavating deeper than 500 meters.",
       featured: false,
       path: "mining/index.html"
     },
@@ -1946,9 +1994,11 @@
       emoji: "⛳",
       category: "classic",
       categoryLabel: "Retro Classics",
+      difficulty: "★☆☆☆ Casual",
       tag: "Sci-Fi Mini Golf",
       desc: "Futuristic mini-golf with gravity wells, bounce pads, and teleportation tunnels on neon greens.",
       controls: "Drag & release to swing putter",
+      proTip: "Survey gravitational pull vectors around black-hole hazards to curl your putt directly in.",
       featured: false,
       path: "golf/index.html"
     },
@@ -1958,9 +2008,11 @@
       emoji: "🥊",
       category: "action",
       categoryLabel: "Action & Combat",
+      difficulty: "★★★★ Hardcore",
       tag: "2D Arcade Fighter",
       desc: "Classic 2D one-on-one combat with combos, special plasma moves, and brutal counterattacks.",
       controls: "A/D to move • J to punch • K to kick",
+      proTip: "Crouch-cancel low attacks into rising dragon uppercuts to punish predictable airborne leaps.",
       featured: true,
       path: "fighter/index.html"
     },
@@ -1970,9 +2022,11 @@
       emoji: "🕵️",
       category: "action",
       categoryLabel: "Action & Combat",
+      difficulty: "★★★☆ Hard",
       tag: "Stealth Espionage",
       desc: "Infiltrate high-security datacenters, avoid laser grids, and hack surveillance cameras undetected.",
       controls: "WASD / Arrows to sneak past cones",
+      proTip: "Observe camera cycle intervals and synchronize your sprint through darkness between sensor sweeps.",
       featured: false,
       path: "stealth/index.html"
     },
@@ -1982,9 +2036,11 @@
       emoji: "💣",
       category: "classic",
       categoryLabel: "Retro Classics",
+      difficulty: "★★☆☆ Medium",
       tag: "Grid Bomber",
       desc: "Drop strategic bombs in a destructible maze, trap opponents, and collect blast radius upgrades.",
       controls: "Arrows to navigate • Space to place bomb",
+      proTip: "Plant remote charges at choke intersections to hem in aggressive AI bots before detonation.",
       featured: false,
       path: "bomber/index.html"
     },
@@ -1994,9 +2050,11 @@
       emoji: "👾",
       category: "classic",
       categoryLabel: "Retro Classics",
+      difficulty: "★★☆☆ Medium",
       tag: "Arcade Maze Chaser",
       desc: "Navigate glowing cyber labyrinths, devour data nodes, and turn the tables on autonomous hunter bots.",
       controls: "Arrow keys to guide chaser",
+      proTip: "Herd chasing bot units together before scooping a power pellet to gobble all 4 in succession.",
       featured: true,
       path: "pacman/index.html"
     },
@@ -2006,9 +2064,11 @@
       emoji: "⚡",
       category: "strategy",
       categoryLabel: "Strategy & RPG",
+      difficulty: "★★☆☆ Medium",
       tag: "City Management",
       desc: "Construct and balance power plants, neon commercial zones, and cyber transport in a metropolis.",
       controls: "Click to zone, construct & manage",
+      proTip: "Construct green geothermal grids adjacent to industrial nodes to minimize transmission impedance.",
       featured: false,
       path: "tycoon/index.html"
     },
@@ -2018,9 +2078,11 @@
       emoji: "🧱",
       category: "classic",
       categoryLabel: "Retro Classics",
+      difficulty: "★★★☆ Hard",
       tag: "Falling Blocks",
       desc: "The timeless tetromino drop re-imagined with glowing neon lines, hard drops, and combo scoring.",
       controls: "← → to move • ↑ to rotate • Space hard drop",
+      proTip: "Maintain flat surface topography and keep column 10 clear to drop long I-bars for Tetris clears.",
       featured: true,
       path: "tetris/index.html"
     }
@@ -2064,6 +2126,73 @@
     if (favCountBadge) favCountBadge.textContent = count;
   }
 
+  // ── Play Telemetry & LocalStorage ──
+  function getPlayCount(gameId) {
+    try {
+      return parseInt(localStorage.getItem('metaclean_arcade_plays_' + gameId) || '0', 10);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  function incrementPlayCount(gameId) {
+    try {
+      const cur = getPlayCount(gameId) + 1;
+      localStorage.setItem('metaclean_arcade_plays_' + gameId, String(cur));
+      const countEl = document.getElementById(`playCount_${gameId}`);
+      if (countEl) countEl.textContent = `▶ ${cur} ${cur === 1 ? 'play' : 'plays'}`;
+    } catch (_) {}
+  }
+
+  // ── Retro CRT Scanline Shader & Mute Controls ──
+  let crtFxEnabled = false;
+  try {
+    crtFxEnabled = localStorage.getItem('metaclean_arcade_crt') === 'true';
+  } catch (_) {}
+
+  function applyCrtFx() {
+    if (arcadeCrtOverlay) {
+      arcadeCrtOverlay.classList.toggle('hidden', !crtFxEnabled);
+    }
+    if (arcadeCrtBtn) {
+      arcadeCrtBtn.classList.toggle('active', crtFxEnabled);
+      arcadeCrtBtn.textContent = crtFxEnabled ? '📺 CRT ON' : '📺 CRT FX';
+    }
+  }
+
+  function toggleCrtFx() {
+    crtFxEnabled = !crtFxEnabled;
+    try {
+      localStorage.setItem('metaclean_arcade_crt', String(crtFxEnabled));
+    } catch (_) {}
+    applyCrtFx();
+  }
+
+  let arcadeMuted = false;
+  try {
+    arcadeMuted = localStorage.getItem('metaclean_arcade_mute') === 'true';
+  } catch (_) {}
+
+  function applyArcadeMute() {
+    if (arcadeMuteBtn) {
+      arcadeMuteBtn.classList.toggle('active', arcadeMuted);
+      arcadeMuteBtn.textContent = arcadeMuted ? '🔇 Muted' : '🔊 Audio';
+    }
+    try {
+      if (arcadeIframe && arcadeIframe.contentWindow) {
+        arcadeIframe.contentWindow.postMessage({ type: 'metaclean_mute', muted: arcadeMuted }, '*');
+      }
+    } catch (_) {}
+  }
+
+  function toggleArcadeMute() {
+    arcadeMuted = !arcadeMuted;
+    try {
+      localStorage.setItem('metaclean_arcade_mute', String(arcadeMuted));
+    } catch (_) {}
+    applyArcadeMute();
+  }
+
   // Render Pavilion 29-Game Responsive Grid
   function renderArcadeGrid(cat = currentCategory, query = currentSearchQuery) {
     if (!arcadeGamesGrid) return;
@@ -2100,12 +2229,17 @@
 
     arcadeGamesGrid.innerHTML = filtered.map(g => {
       const isFav = favoriteGameIds.has(g.id);
+      const plays = getPlayCount(g.id);
       return `
-        <div class="game-card ${g.featured ? 'featured-card' : ''}" id="gameCard_${g.id}">
+        <div class="game-card theme-${g.category} ${g.featured ? 'featured-card' : ''}" id="gameCard_${g.id}">
           <div class="game-card-top">
             <div class="game-header-info">
               <div class="game-icon-box">${g.emoji}</div>
               <div class="game-title-wrap">
+                <div class="game-badge-row">
+                  <span class="game-cat-pill ${g.category}">${window.MetaCleanEngine.esc(g.categoryLabel)}</span>
+                  <span class="game-diff-pill">${window.MetaCleanEngine.esc(g.difficulty || '★★★☆')}</span>
+                </div>
                 <h3 class="game-card-title">${window.MetaCleanEngine.esc(g.name)}</h3>
                 <span class="game-card-tag">${window.MetaCleanEngine.esc(g.tag)}</span>
               </div>
@@ -2115,6 +2249,10 @@
             </button>
           </div>
           <p class="game-card-desc">${window.MetaCleanEngine.esc(g.desc)}</p>
+          <div class="game-card-meta-row">
+            <span class="game-tag-chip">⚡ ${window.MetaCleanEngine.esc(g.tag)}</span>
+            <span class="game-play-count" id="playCount_${g.id}">▶ ${plays} ${plays === 1 ? 'play' : 'plays'}</span>
+          </div>
           <div class="game-card-footer">
             <span class="game-control-hint" title="${window.MetaCleanEngine.esc(g.controls)}">🎮 ${window.MetaCleanEngine.esc(g.controls)}</span>
             <button type="button" class="btn-play-game" onclick="openArcade('${g.path}')">▶ Play Now</button>
@@ -2185,6 +2323,10 @@
     if (activeGameControls) activeGameControls.textContent = `Controls: ${target.controls}`;
     if (arcadeQuickSelect) arcadeQuickSelect.value = target.path;
 
+    if (arcadeHintText) {
+      arcadeHintText.innerHTML = `<strong>${window.MetaCleanEngine.esc(target.controls)}</strong> • <span style="color:#00f0ff;">Pro-Tip:</span> ${window.MetaCleanEngine.esc(target.proTip || target.desc)}`;
+    }
+
     // Update Favorite Button in modal
     if (arcadeFavBtn) {
       const isFav = favoriteGameIds.has(target.id);
@@ -2201,9 +2343,16 @@
       }
     });
 
+    // Track play count
+    incrementPlayCount(target.id);
+
     // Update Recents
     recentGameIds = [target.id, ...recentGameIds.filter(id => id !== target.id)].slice(0, 5);
     saveRecents();
+
+    // Re-apply CRT FX & Mute settings to active session
+    applyCrtFx();
+    applyArcadeMute();
   }
 
   function openArcade(gameUrl = "game/index.html") {
@@ -2314,6 +2463,12 @@
   const btnArcadeMaster = $("#btnArcadeMaster");
   if (btnArcadeMaster) btnArcadeMaster.onclick = () => openArcade("game/index.html");
 
+  const arcadeCrtBtnEl = $("#arcadeCrtBtn");
+  if (arcadeCrtBtnEl) arcadeCrtBtnEl.onclick = toggleCrtFx;
+
+  const arcadeMuteBtnEl = $("#arcadeMuteBtn");
+  if (arcadeMuteBtnEl) arcadeMuteBtnEl.onclick = toggleArcadeMute;
+
   const arcadeReloadBtn = $("#arcadeReloadBtn");
   if (arcadeReloadBtn) arcadeReloadBtn.onclick = reloadActiveGame;
 
@@ -2338,12 +2493,23 @@
   // Keyboard Shortcuts in Arcade Modal
   window.addEventListener("keydown", e => {
     if (!arcadeModal || arcadeModal.classList.contains("hidden")) return;
+    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT' || document.activeElement.tagName === 'TEXTAREA')) {
+      if (e.key === "Escape") closeArcade();
+      return;
+    }
     if (e.key === "Escape") {
       closeArcade();
-    } else if (e.key === "r" && (e.ctrlKey || e.metaKey || document.activeElement.tagName !== 'INPUT')) {
-      if (document.activeElement.tagName !== 'INPUT') {
-        reloadActiveGame();
-      }
+    } else if (e.key === "r" || e.key === "R") {
+      reloadActiveGame();
+    } else if (e.key === "f" || e.key === "F") {
+      e.preventDefault();
+      toggleArcadeFullscreen();
+    } else if (e.key === "c" || e.key === "C") {
+      e.preventDefault();
+      toggleCrtFx();
+    } else if (e.key === "m" || e.key === "M") {
+      e.preventDefault();
+      toggleArcadeMute();
     }
   });
 
@@ -2355,6 +2521,8 @@
   window.reloadActiveGame = reloadActiveGame;
   window.toggleArcadeFullscreen = toggleArcadeFullscreen;
   window.toggleActiveGameFav = toggleActiveGameFav;
+  window.toggleCrtFx = toggleCrtFx;
+  window.toggleArcadeMute = toggleArcadeMute;
 
   // Initial Initialization
   populateQuickSelect();
@@ -2362,6 +2530,8 @@
   renderRecentlyPlayed();
   renderArcadeGrid('all', '');
   updateFavBadges();
+  applyCrtFx();
+  applyArcadeMute();
 
   // ── Offline PWA Service Worker & Install Prompt ──
   if ('serviceWorker' in navigator) {

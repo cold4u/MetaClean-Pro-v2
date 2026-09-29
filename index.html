@@ -37,10 +37,12 @@
             <!-- Dynamically populated with all 29 games grouped by category -->
           </select>
         </div>
+        <button type="button" id="arcadeCrtBtn" class="arcade-action-btn crt-btn" title="Toggle Retro CRT Scanlines [C]">📺 CRT FX</button>
+        <button type="button" id="arcadeMuteBtn" class="arcade-action-btn mute-btn" title="Mute/Unmute Audio [M]">🔊 Audio</button>
         <button type="button" id="arcadeReloadBtn" class="arcade-action-btn" title="Restart Game [R]">🔄 Restart</button>
         <button type="button" id="arcadeRandomBtn" class="arcade-action-btn" title="Random Next Game">🎲 Random</button>
         <button type="button" id="arcadeFavBtn" class="arcade-action-btn fav-btn" title="Favorite Game">🤍</button>
-        <button type="button" id="arcadeFullscreenBtn" class="arcade-action-btn" title="Toggle Fullscreen">⛶ Fullscreen</button>
+        <button type="button" id="arcadeFullscreenBtn" class="arcade-action-btn" title="Toggle Fullscreen [F]">⛶ Fullscreen</button>
         <a id="arcadeTabLink" href="game/index.html" target="_blank" rel="noopener noreferrer" class="arcade-action-btn" title="Open in new tab">Full Tab ↗</a>
         <button id="closeArcadeBtn" class="arcade-action-btn close-btn" title="Close Arcade [Esc]">✕</button>
       </div>
@@ -48,7 +50,21 @@
     <div class="arcade-tab-bar" id="arcadeTabBar">
       <!-- 29 quick-tab buttons so the existing quick switcher still works smoothly -->
     </div>
-    <div class="arcade-modal-body">
+    <div class="arcade-subbar" id="arcadeSubbar">
+      <div class="arcade-hints-row">
+        <span class="hint-tag">🕹️ HOW TO PLAY:</span>
+        <span class="hint-text" id="arcadeHintText">Use Arrow keys or WASD to navigate, Spacebar to trigger action.</span>
+      </div>
+      <div class="arcade-shortcuts-row">
+        <span><kbd>R</kbd> Restart</span>
+        <span><kbd>F</kbd> Fullscreen</span>
+        <span><kbd>C</kbd> CRT FX</span>
+        <span><kbd>M</kbd> Audio</span>
+        <span><kbd>Esc</kbd> Exit</span>
+      </div>
+    </div>
+    <div class="arcade-modal-body" id="arcadeModalBody">
+      <div id="arcadeCrtOverlay" class="arcade-crt-overlay hidden" aria-hidden="true"></div>
       <iframe id="arcadeIframe" src="about:blank" data-src="game/index.html" class="arcade-iframe" title="Cyber Arcade Game" allow="autoplay; fullscreen"></iframe>
     </div>
   </div>
@@ -58,7 +74,7 @@
   <div class="brand">
     <span>✦</span>
     <strong>MetaClean</strong>
-    <i class="version-tag">PRO v2.4</i>
+    <i class="version-tag">PRO v2.7</i>
   </div>
   <div class="header-right">
     <button id="installAppBtn" class="pwa-install-btn hidden" title="Install MetaClean Pro as Desktop/Mobile App">
@@ -388,7 +404,7 @@
 
 <footer class="site-footer">
   <div class="footer-wrap">
-    <div><strong>MetaClean Pro v2.4</strong> <span>• Zero Network Transmission • 100% Local Privacy</span></div>
+    <div><strong>MetaClean Pro v2.7</strong> <span>• Zero Network Transmission • 100% Local Privacy</span></div>
     <div class="footer-links">
       <a href="https://github.com/cold4u/MetaClean-Pro-v2" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
       <span>•</span>
