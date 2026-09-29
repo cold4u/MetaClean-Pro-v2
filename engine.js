@@ -579,18 +579,34 @@
         fields.push({ category: 'Structure', label: 'PDF XMP Metadata Stream', value: 'Adobe Extensible Metadata XML stream', threat: 'med' });
       }
     }
-    // 9. MP4 / MOV Video
+    // 9. MP4 / MOV Video or HEIC / AVIF High-Efficiency Container
     else if (buf.length >= 12 && (latinText.slice(4, 8) === 'ftyp' || latinText.slice(4, 8) === 'moov')) {
-      format = 'mp4';
-      fields.push({ category: 'Structure', label: 'ISO Base Media (MP4/QuickTime)', value: 'MPEG-4 Container', threat: 'low' });
-      if (latinText.includes('udta')) {
-        fields.push({ category: 'Metadata', label: 'User Data Atom (udta)', value: 'Location, device, and user metadata container', threat: 'high' });
-      }
-      if (latinText.includes('©xyz')) {
-        fields.push({ category: 'Location', label: 'QuickTime GPS Coordinates', value: 'Hardware GPS recorded by phone camera', threat: 'critical' });
-      }
-      if (latinText.includes('©mak') || latinText.includes('©mod')) {
-        fields.push({ category: 'Hardware', label: 'Recording Camera / Phone Model', value: 'Device hardware identification', threat: 'high' });
+      const brand = latinText.slice(8, 12).toLowerCase();
+      const isHeic = /heic|heix|mif1|msf1|hevc/i.test(brand) || /\.(heic|heif)$/i.test(file.name);
+      const isAvif = /avif|avis/i.test(brand) || /\.avif$/i.test(file.name);
+
+      if (isHeic || isAvif) {
+        format = isAvif ? 'avif' : 'heic';
+        fields.push({ category: 'Structure', label: `${format.toUpperCase()} High-Efficiency Container`, value: `Brand: ${brand || format}`, threat: 'low' });
+
+        // Search for embedded EXIF payload in container
+        const exifIdx = latinText.indexOf('Exif\0\0');
+        if (exifIdx !== -1) {
+          fields.push({ category: 'Structure', label: `${format.toUpperCase()} Embedded EXIF`, value: 'Full camera sensor & GPS payload in meta box', threat: 'high' });
+          parseTiff(dv, exifIdx + 6, fields, forensicDetails);
+        }
+      } else {
+        format = 'mp4';
+        fields.push({ category: 'Structure', label: 'ISO Base Media (MP4/QuickTime)', value: 'MPEG-4 Container', threat: 'low' });
+        if (latinText.includes('udta')) {
+          fields.push({ category: 'Metadata', label: 'User Data Atom (udta)', value: 'Location, device, and user metadata container', threat: 'high' });
+        }
+        if (latinText.includes('©xyz')) {
+          fields.push({ category: 'Location', label: 'QuickTime GPS Coordinates', value: 'Hardware GPS recorded by phone camera', threat: 'critical' });
+        }
+        if (latinText.includes('©mak') || latinText.includes('©mod')) {
+          fields.push({ category: 'Hardware', label: 'Recording Camera / Phone Model', value: 'Device hardware identification', threat: 'high' });
+        }
       }
     }
 
@@ -705,6 +721,23 @@
         if (keepSegment) {
           out.push(buf.slice(p, p + 2 + len));
         }
+      } else if (selectiveMode === 'ai_only') {
+        // Strip only AI prompt segments and generative markers
+        let keepSegment = true;
+        if (marker === 0xFE) { // COM
+          const comText = readAscii(buf, p + 4, len - 2);
+          if (/Negative prompt:|Steps:\s*\d+|Sampler:\s*|Seed:\s*\d+|DALL-E|Midjourney|Stable Diffusion|ComfyUI/i.test(comText)) {
+            keepSegment = false;
+          }
+        } else if (marker === 0xE1) { // APP1 XMP or EXIF
+          const segText = latinText.slice(p + 4, p + 2 + len);
+          if (/Midjourney|DALL-E|Adobe Firefly|Stable Diffusion|ComfyUI|NovelAI/i.test(segText)) {
+            keepSegment = false;
+          }
+        }
+        if (keepSegment) {
+          out.push(buf.slice(p, p + 2 + len));
+        }
       } else {
         if (!isApp && !isCom || isIcc) {
           out.push(buf.slice(p, p + 2 + len));
@@ -725,7 +758,7 @@
   }
 
   // 2. PNG Lossless Cleaner
-  function cleanPngLossless(buf, preserveIcc = false) {
+  function cleanPngLossless(buf, preserveIcc = false, selectiveMode = 'all') {
     if (buf.length < 8) return buf;
     const pngSig = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
     for (let i = 0; i < 8; i++) {
@@ -747,7 +780,27 @@
       const totalLen = 12 + len;
       if (p + totalLen > n) break;
 
-      if (!dropChunks.has(typ)) {
+      let keep = true;
+      if (selectiveMode === 'ai_only') {
+        if (typ === 'tEXt' || typ === 'zTXt' || typ === 'iTXt') {
+          let kw = '';
+          const maxKw = Math.min(len, 80);
+          for (let k = 0; k < maxKw; k++) {
+            const b = buf[p + 8 + k];
+            if (b === 0) break;
+            kw += String.fromCharCode(b);
+          }
+          if (/parameters|prompt|workflow|Comment|Software|generation/i.test(kw)) {
+            keep = false;
+          }
+        }
+      } else {
+        if (dropChunks.has(typ)) {
+          keep = false;
+        }
+      }
+
+      if (keep) {
         out.push(buf.slice(p, p + totalLen));
       }
 
@@ -1087,7 +1140,7 @@
           cleanBlob = new Blob([cleanBuf], { type: 'image/jpeg' });
           break;
         case 'png':
-          cleanBuf = cleanPngLossless(rawBuf, preserveIcc);
+          cleanBuf = cleanPngLossless(rawBuf, preserveIcc, selectiveMode);
           cleanBlob = new Blob([cleanBuf], { type: 'image/png' });
           break;
         case 'webp':
@@ -1119,6 +1172,10 @@
         case 'mp4':
           cleanBuf = cleanMp4Lossless(rawBuf);
           cleanBlob = new Blob([cleanBuf], { type: 'video/mp4' });
+          break;
+        case 'heic':
+        case 'avif':
+          cleanBlob = await cleanImageRaster(file, options.rasterQuality || 0.95, watermark);
           break;
         default:
           if (file.type.startsWith('image/')) {

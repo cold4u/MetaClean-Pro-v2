@@ -2020,6 +2020,185 @@ main {
   letter-spacing: 0.5px;
 }
 
+/* ── Multi-File Batch Selection Bar ── */
+.queue-selection-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.selection-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.select-all-lbl {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #cbd5e1;
+  user-select: none;
+}
+
+.selection-count-badge {
+  background: rgba(0, 240, 255, 0.12);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-sel-action {
+  background: rgba(30, 41, 59, 0.85);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 7px;
+  padding: 6px 13px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-sel-action:hover:not(:disabled) {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: rgba(0, 240, 255, 0.6);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 240, 255, 0.2);
+}
+
+.btn-sel-action.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #fca5a5;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.25);
+}
+
+.btn-sel-action:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.file-select-wrap {
+  display: flex;
+  align-items: center;
+  margin-right: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.file-select-cb {
+  width: 18px;
+  height: 18px;
+  accent-color: #00f0ff;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* ── Copy Clean Image Button ── */
+.btn-copy-img {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 6px;
+  font-weight: 700;
+  transition: all 0.18s ease;
+}
+
+.btn-copy-img:hover {
+  background: rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.7);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);
+}
+
+.btn-copy-img.copied {
+  background: #10b981 !important;
+  color: #022c22 !important;
+  border-color: #10b981 !important;
+  font-weight: 800;
+}
+
+/* ── Video Forensics Player & Stream Inspector ── */
+.video-preview-container {
+  background: #06090e;
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.video-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #e2e8f0;
+}
+
+.video-codec-pill {
+  background: rgba(121, 82, 255, 0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(121, 82, 255, 0.45);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.forensic-video-preview {
+  width: 100%;
+  max-height: 320px;
+  border-radius: 8px;
+  background: #000;
+  outline: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.video-forensics-notes {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.video-forensics-notes strong {
+  color: var(--accent-cyan);
+}
+
+
 
 
 

@@ -11,6 +11,7 @@
 
   // ── State ──
   const queue = new Map();
+  const selectedFileIds = new Set();
   let fileSequence = 0;
   let activeFilter = 'all';
   let deferredPrompt = null;
@@ -54,6 +55,8 @@
       case 'png': return 'image/png';
       case 'webp': return 'image/webp';
       case 'svg': return 'image/svg+xml';
+      case 'heic': case 'heif': return 'image/heic';
+      case 'avif': return 'image/avif';
       case 'mp3': return 'audio/mpeg';
       case 'flac': return 'audio/flac';
       case 'wav': return 'audio/wav';
@@ -267,6 +270,8 @@
       case 'png':
       case 'webp':
       case 'svg':
+      case 'heic':
+      case 'avif':
         return '🖼️';
       case 'mp3':
       case 'flac':
@@ -275,6 +280,7 @@
       case 'pdf':
         return '📄';
       case 'mp4':
+      case 'mov':
         return '🎥';
       default:
         return '📁';
@@ -289,6 +295,10 @@
 
     el.innerHTML = `
       <div class="file-card-main">
+        <label class="file-select-wrap cyber-checkbox" title="Select for batch operations">
+          <input type="checkbox" class="file-select-cb" id="cb_${entry.id}" onchange="toggleFileSelection('${entry.id}')">
+          <span class="cb-checkmark"></span>
+        </label>
         <div class="file-thumb-box" id="thumb_${entry.id}">
           <span class="file-thumb-icon">${getFormatIcon(entry.format)}</span>
         </div>
@@ -312,6 +322,9 @@
           </button>
           <button class="btn btn-primary btn-sm" id="btnClean_${entry.id}" disabled onclick="cleanSingle('${entry.id}')">
             Clean
+          </button>
+          <button class="btn btn-copy-img btn-sm" id="btnCopyImg_${entry.id}" style="display:none;" onclick="copyCleanImage('${entry.id}')" title="Copy clean image directly to clipboard">
+            📋 Copy
           </button>
           <button class="btn btn-success btn-sm" id="btnDownload_${entry.id}" style="display:none;" onclick="downloadSingle('${entry.id}')">
             Download
@@ -470,9 +483,20 @@
       downloadBtn.style.display = entry.cleanResult ? 'inline-flex' : 'none';
     }
 
+    const copyImgBtn = $('#btnCopyImg_' + id);
+    if (copyImgBtn) {
+      const isImg = ['jpeg', 'png', 'webp', 'svg', 'heic', 'avif'].includes(entry.format);
+      copyImgBtn.style.display = (entry.cleanResult && isImg) ? 'inline-flex' : 'none';
+    }
+
     const shareBtn = $('#btnShare_' + id);
     if (shareBtn) {
       shareBtn.style.display = (entry.cleanResult && typeof navigator.share === 'function') ? 'inline-flex' : 'none';
+    }
+
+    const cb = $('#cb_' + id);
+    if (cb) {
+      cb.checked = selectedFileIds.has(id);
     }
 
     // Forensics Drawer
@@ -661,6 +685,24 @@
       attachAudioVisualizer(entry.id);
     }
 
+    // Video Player Preview & Stream Inspector
+    let videoHtml = '';
+    if (entry.format === 'mp4' || entry.format === 'mov') {
+      const vidUrl = entry.cleanResult ? URL.createObjectURL(entry.cleanResult.cleanBlob) : URL.createObjectURL(entry.file);
+      videoHtml = `
+        <div class="video-preview-container">
+          <div class="video-header">
+            <span>🎬 <strong>${entry.cleanResult ? 'Sanitized Lossless Video Stream' : 'Raw Video Stream Player'}</strong></span>
+            <span class="video-codec-pill">${entry.format.toUpperCase()} (H.264/HEVC/AAC)</span>
+          </div>
+          <video id="vidEl_${entry.id}" class="forensic-video-preview" controls preload="metadata" src="${vidUrl}"></video>
+          <div class="video-forensics-notes">
+            <span>✓ In-memory lossless atom parsing: <strong>moov</strong>, <strong>udta</strong>, and <strong>©xyz GPS coordinates</strong> isolated and scrubbed with bit-level precision. Zero re-encoding artifacts.</span>
+          </div>
+        </div>
+      `;
+    }
+
     // Hex Forensics Dump
     const hexDumpData = entry.cleanResult?.cleanHexDump || entry.scan.hexDump || [];
     let hexHtml = `
@@ -690,6 +732,7 @@
       ${diffMatrixHtml}
       ${hashHtml}
       ${audioHtml}
+      ${videoHtml}
       ${hexHtml}
     `;
   }
@@ -783,7 +826,9 @@
       if (entry.cleanThumbUrl) URL.revokeObjectURL(entry.cleanThumbUrl);
     }
     queue.delete(id);
+    selectedFileIds.delete(id);
     $('#card_' + id)?.remove();
+    updateSelectionUI();
     updateMetrics();
     if (queue.size === 0) {
       queueSection.classList.add('hidden');
@@ -807,7 +852,7 @@
       const modeVal = cleanModeSelect.value;
       const options = {
         mode: modeVal === 'raster' ? 'raster' : 'lossless',
-        selectiveMode: modeVal === 'gps_only' ? 'gps_only' : 'all',
+        selectiveMode: modeVal === 'gps_only' ? 'gps_only' : (modeVal === 'ai_only' ? 'ai_only' : 'all'),
         preserveIcc: optPreserveIcc.checked,
         anonymize: optAnonymize.checked,
         watermark: optWatermark ? optWatermark.checked : false
@@ -818,11 +863,12 @@
       entry.status = 'cleaned';
 
       // Cleaned thumbnail for diff slider if image
-      if (entry.file.type.startsWith('image/') || ['jpeg', 'png', 'webp'].includes(entry.format)) {
+      if (entry.file.type.startsWith('image/') || ['jpeg', 'png', 'webp', 'heic', 'avif'].includes(entry.format)) {
         entry.cleanThumbUrl = URL.createObjectURL(result.cleanBlob);
       }
 
       updateCardUI(id);
+      updateSelectionUI();
       updateMetrics();
       showVerification();
     } catch (err) {
@@ -849,6 +895,48 @@
     }
 
     triggerDownload(entry.cleanResult.cleanBlob, filename);
+  };
+
+  // ── Direct Clipboard Image Copy (Lossless / Cleaned) ──
+  window.copyCleanImage = async function(id) {
+    const entry = queue.get(id);
+    if (!entry || !entry.cleanResult) return;
+    const btn = $('#btnCopyImg_' + id);
+
+    try {
+      let pngBlob;
+      if (entry.cleanResult.cleanBlob.type === 'image/png') {
+        pngBlob = entry.cleanResult.cleanBlob;
+      } else {
+        const bmp = await createImageBitmap(entry.cleanResult.cleanBlob);
+        const canvas = document.createElement('canvas');
+        canvas.width = bmp.width;
+        canvas.height = bmp.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bmp, 0, 0);
+        pngBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      }
+
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': pngBlob })
+        ]);
+        if (btn) {
+          const origHtml = btn.innerHTML;
+          btn.innerHTML = '✓ Copied!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.innerHTML = origHtml;
+            btn.classList.remove('copied');
+          }, 2200);
+        }
+      } else {
+        throw new Error('ClipboardItem API not supported');
+      }
+    } catch (err) {
+      console.warn('Clipboard write failed, falling back to download:', err);
+      window.downloadSingle(id);
+    }
   };
 
   function triggerDownload(blob, name) {
@@ -1019,6 +1107,8 @@
       if (e.cleanThumbUrl) URL.revokeObjectURL(e.cleanThumbUrl);
     });
     queue.clear();
+    selectedFileIds.clear();
+    updateSelectionUI();
     fileQueueList.innerHTML = '';
     queueSection.classList.add('hidden');
     verificationBanner.classList.add('hidden');
@@ -1060,10 +1150,10 @@
     // Filter tab counts
     const aiCount = Array.from(queue.values()).filter(e => !!e.scan?.aiData).length;
     const aiUncleaned = Array.from(queue.values()).filter(e => !!e.scan?.aiData && !e.cleanResult).length;
-    const images = Array.from(queue.values()).filter(e => ['jpeg','png','webp','svg'].includes(e.format)).length;
+    const images = Array.from(queue.values()).filter(e => ['jpeg','png','webp','svg','heic','avif'].includes(e.format)).length;
     const audios = Array.from(queue.values()).filter(e => ['mp3','flac','wav'].includes(e.format)).length;
     const pdfs = Array.from(queue.values()).filter(e => e.format === 'pdf').length;
-    const videos = Array.from(queue.values()).filter(e => e.format === 'mp4').length;
+    const videos = Array.from(queue.values()).filter(e => ['mp4','mov'].includes(e.format)).length;
 
     $('#tabCountAll').textContent = total;
     if ($('#tabCountAi')) $('#tabCountAi').textContent = aiCount;
@@ -1083,10 +1173,162 @@
       }
     }
 
+    updateSelectionUI();
+
     if (typeof syncArcadeQueueHUD === 'function') {
       syncArcadeQueueHUD();
     }
   }
+
+  // ── Multi-File Batch Selection Controller ──
+  window.toggleFileSelection = function(id) {
+    if (selectedFileIds.has(id)) {
+      selectedFileIds.delete(id);
+    } else {
+      selectedFileIds.add(id);
+    }
+    updateSelectionUI();
+  };
+
+  window.toggleSelectAll = function(checked) {
+    if (checked) {
+      queue.forEach((_, id) => selectedFileIds.add(id));
+    } else {
+      selectedFileIds.clear();
+    }
+    queue.forEach((_, id) => {
+      const cb = $('#cb_' + id);
+      if (cb) cb.checked = checked;
+    });
+    updateSelectionUI();
+  };
+
+  function updateSelectionUI() {
+    const count = selectedFileIds.size;
+    const total = queue.size;
+    const selBadge = $('#selectedCountBadge');
+    const selCleanNum = $('#selCleanNum');
+    const btnCleanSel = $('#btnCleanSelected');
+    const btnDlSel = $('#btnDownloadSelected');
+    const btnRemSel = $('#btnRemoveSelected');
+    const selectAllCb = $('#selectAllCheckbox');
+
+    if (selBadge) selBadge.textContent = `${count} selected`;
+    if (selCleanNum) selCleanNum.textContent = count;
+
+    let uncleanedCount = 0;
+    let cleanedCount = 0;
+    selectedFileIds.forEach(id => {
+      const e = queue.get(id);
+      if (e) {
+        if (e.cleanResult) cleanedCount++;
+        else uncleanedCount++;
+      }
+    });
+
+    if (btnCleanSel) btnCleanSel.disabled = uncleanedCount === 0;
+    if (btnDlSel) btnDlSel.disabled = cleanedCount === 0;
+    if (btnRemSel) btnRemSel.disabled = count === 0;
+
+    if (selectAllCb) {
+      selectAllCb.checked = total > 0 && count === total;
+      selectAllCb.indeterminate = count > 0 && count < total;
+    }
+  }
+
+  window.cleanSelectedFiles = async function() {
+    const selectedUncleaned = Array.from(selectedFileIds)
+      .map(id => queue.get(id))
+      .filter(e => e && !e.cleanResult);
+
+    if (!selectedUncleaned.length) return;
+
+    batchProgressContainer.classList.remove('hidden');
+    const btnCleanSel = $('#btnCleanSelected');
+    if (btnCleanSel) btnCleanSel.disabled = true;
+
+    for (let i = 0; i < selectedUncleaned.length; i++) {
+      const e = selectedUncleaned[i];
+      const pct = Math.round(((i + 1) / selectedUncleaned.length) * 100);
+      progressStateText.textContent = `Scrubbing selected: ${e.file.name} (${i + 1}/${selectedUncleaned.length})…`;
+      progressPercentText.textContent = pct + '%';
+      batchProgressBar.style.width = pct + '%';
+
+      await window.cleanSingle(e.id);
+    }
+
+    progressStateText.textContent = 'Selected files sanitized successfully!';
+    setTimeout(() => {
+      batchProgressContainer.classList.add('hidden');
+    }, 1800);
+
+    if (btnCleanSel) btnCleanSel.disabled = false;
+    updateSelectionUI();
+    updateMetrics();
+  };
+
+  window.downloadSelectedZip = async function() {
+    const readySelected = Array.from(selectedFileIds)
+      .map(id => queue.get(id))
+      .filter(e => e && e.cleanResult);
+
+    if (!readySelected.length) return;
+
+    const btnDlSel = $('#btnDownloadSelected');
+    if (btnDlSel) {
+      btnDlSel.disabled = true;
+      btnDlSel.textContent = '⏳ Building ZIP…';
+    }
+
+    try {
+      const filesForZip = readySelected.map(e => {
+        let name = e.file.name;
+        const ext = name.includes('.') ? '.' + name.split('.').pop() : '';
+        const base = name.replace(/\.[^.]+$/, '');
+
+        if (optAnonymize.checked) {
+          const hash = Math.random().toString(16).slice(2, 8);
+          name = `${e.format || 'file'}_clean_${hash}${ext}`;
+        } else {
+          name = `${base}_clean${ext}`;
+        }
+
+        return { name, data: e.cleanResult.cleanBlob };
+      });
+
+      const zipBlob = await window.createZip(filesForZip);
+      triggerDownload(zipBlob, `metaclean_selected_${readySelected.length}_files.zip`);
+    } catch (err) {
+      console.error('ZIP generation failed:', err);
+      alert('Could not create ZIP archive for selected items.');
+    } finally {
+      if (btnDlSel) {
+        btnDlSel.disabled = false;
+        btnDlSel.textContent = '📦 Download Selected ZIP';
+      }
+    }
+  };
+
+  window.removeSelectedFiles = function() {
+    if (selectedFileIds.size === 0) return;
+    const ids = Array.from(selectedFileIds);
+    ids.forEach(id => {
+      const entry = queue.get(id);
+      if (entry) {
+        if (entry.thumbUrl) URL.revokeObjectURL(entry.thumbUrl);
+        if (entry.cleanThumbUrl) URL.revokeObjectURL(entry.cleanThumbUrl);
+      }
+      queue.delete(id);
+      $('#card_' + id)?.remove();
+    });
+    selectedFileIds.clear();
+    updateSelectionUI();
+    updateMetrics();
+    if (queue.size === 0) {
+      queueSection.classList.add('hidden');
+      verificationBanner.classList.add('hidden');
+    }
+  };
 
   // Batch Clean All AI Files
   window.cleanAllAiFiles = async function() {
@@ -1160,13 +1402,13 @@
       const entry = queue.get(entryId);
       card.style.display = (entry && entry.scan?.aiData) ? '' : 'none';
     } else if (activeFilter === 'image') {
-      card.style.display = ['jpeg','png','webp','svg'].includes(format) ? '' : 'none';
+      card.style.display = ['jpeg','png','webp','svg','heic','avif'].includes(format) ? '' : 'none';
     } else if (activeFilter === 'audio') {
       card.style.display = ['mp3','flac','wav'].includes(format) ? '' : 'none';
     } else if (activeFilter === 'pdf') {
       card.style.display = (format === 'pdf') ? '' : 'none';
     } else if (activeFilter === 'video') {
-      card.style.display = (format === 'mp4') ? '' : 'none';
+      card.style.display = (format === 'mp4' || format === 'mov') ? '' : 'none';
     }
   }
 

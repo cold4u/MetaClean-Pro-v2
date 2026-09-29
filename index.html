@@ -88,7 +88,7 @@
     <!-- Multi-File Dropzone -->
     <div class="drop-container">
       <label class="drop" id="drop" tabindex="0" role="button" aria-label="Drop files here or click to browse">
-        <input id="fileInput" type="file" multiple accept="image/jpeg,image/png,image/webp,image/svg+xml,audio/mpeg,audio/flac,audio/wav,application/pdf,video/mp4,video/quicktime,application/zip,.jpg,.jpeg,.png,.webp,.svg,.mp3,.flac,.wav,.pdf,.mp4,.mov,.zip">
+        <input id="fileInput" type="file" multiple accept="image/jpeg,image/png,image/webp,image/svg+xml,image/heic,image/heif,image/avif,audio/mpeg,audio/flac,audio/wav,application/pdf,video/mp4,video/quicktime,application/zip,.jpg,.jpeg,.png,.webp,.svg,.heic,.heif,.avif,.mp3,.flac,.wav,.pdf,.mp4,.mov,.zip">
         <input id="folderInput" type="file" webkitdirectory directory multiple style="display:none;">
         <input id="cameraInput" type="file" accept="image/*" capture="environment" style="display:none;">
         <div class="upload-icon-box">
@@ -104,6 +104,8 @@
           <span class="chip">JPEG</span>
           <span class="chip">PNG</span>
           <span class="chip">WEBP</span>
+          <span class="chip">HEIC</span>
+          <span class="chip">AVIF</span>
           <span class="chip">SVG</span>
           <span class="chip">MP3</span>
           <span class="chip">FLAC</span>
@@ -155,6 +157,7 @@
           <label for="cleanModeSelect">Scrubbing Mode:</label>
           <select id="cleanModeSelect" class="cyber-select">
             <option value="lossless" selected>⚡ Lossless Binary Scrub (100% Quality & Instant)</option>
+            <option value="ai_only">🤖 Strip AI Prompts & Generative Fingerprints Only</option>
             <option value="gps_only">📍 Strip GPS & Location Only (Preserve Camera Settings)</option>
             <option value="raster">🛡️ Deep Raster Re-render (Anti-Steganography / Visual Only)</option>
           </select>
@@ -198,6 +201,28 @@
       </div>
       <div class="progress-bar-track">
         <div id="batchProgressBar" class="progress-bar-fill"></div>
+      </div>
+    </div>
+
+    <!-- Multi-File Selection Toolbar -->
+    <div id="queueSelectionBar" class="queue-selection-bar">
+      <div class="selection-controls">
+        <label class="cyber-checkbox select-all-lbl">
+          <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)">
+          <span id="selectAllLabel">Select All</span>
+        </label>
+        <span class="selection-count-badge" id="selectedCountBadge">0 selected</span>
+      </div>
+      <div class="selection-actions">
+        <button id="btnCleanSelected" class="btn-sel-action" onclick="cleanSelectedFiles()" disabled title="Clean only selected files">
+          ⚡ Clean Selected (<span id="selCleanNum">0</span>)
+        </button>
+        <button id="btnDownloadSelected" class="btn-sel-action" onclick="downloadSelectedZip()" disabled title="Download selected cleaned files as ZIP">
+          📦 Download Selected ZIP
+        </button>
+        <button id="btnRemoveSelected" class="btn-sel-action danger" onclick="removeSelectedFiles()" disabled title="Remove selected files from queue">
+          🗑️ Remove Selected
+        </button>
       </div>
     </div>
 
