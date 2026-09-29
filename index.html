@@ -88,7 +88,7 @@
     <!-- Multi-File Dropzone -->
     <div class="drop-container">
       <label class="drop" id="drop" tabindex="0" role="button" aria-label="Drop files here or click to browse">
-        <input id="fileInput" type="file" multiple accept="image/jpeg,image/png,image/webp,image/svg+xml,image/heic,image/heif,image/avif,audio/mpeg,audio/flac,audio/wav,application/pdf,video/mp4,video/quicktime,application/zip,.jpg,.jpeg,.png,.webp,.svg,.heic,.heif,.avif,.mp3,.flac,.wav,.pdf,.mp4,.mov,.zip">
+        <input id="fileInput" type="file" multiple accept="image/jpeg,image/png,image/webp,image/svg+xml,image/heic,image/heif,image/avif,audio/mpeg,audio/flac,audio/wav,audio/ogg,audio/opus,application/pdf,video/mp4,video/quicktime,application/zip,.jpg,.jpeg,.png,.webp,.svg,.heic,.heif,.avif,.mp3,.flac,.wav,.ogg,.opus,.pdf,.mp4,.mov,.zip">
         <input id="folderInput" type="file" webkitdirectory directory multiple style="display:none;">
         <input id="cameraInput" type="file" accept="image/*" capture="environment" style="display:none;">
         <div class="upload-icon-box">
@@ -110,6 +110,7 @@
           <span class="chip">MP3</span>
           <span class="chip">FLAC</span>
           <span class="chip">WAV</span>
+          <span class="chip">OGG / OPUS</span>
           <span class="chip">PDF</span>
           <span class="chip">MP4 / MOV</span>
           <span class="chip highlight">📦 ZIP ARCHIVES</span>
@@ -157,6 +158,7 @@
           <label for="cleanModeSelect">Scrubbing Mode:</label>
           <select id="cleanModeSelect" class="cyber-select">
             <option value="lossless" selected>⚡ Lossless Binary Scrub (100% Quality & Instant)</option>
+            <option value="spoof_decoy">🎭 Privacy Masking (Decoy GPS & Cloaked Hardware)</option>
             <option value="ai_only">🤖 Strip AI Prompts & Generative Fingerprints Only</option>
             <option value="gps_only">📍 Strip GPS & Location Only (Preserve Camera Settings)</option>
             <option value="raster">🛡️ Deep Raster Re-render (Anti-Steganography / Visual Only)</option>
@@ -212,6 +214,18 @@
           <span id="selectAllLabel">Select All</span>
         </label>
         <span class="selection-count-badge" id="selectedCountBadge">0 selected</span>
+        <div class="queue-search-box">
+          <input type="text" id="queueSearchInput" class="queue-search-input" placeholder="🔍 Search queue..." oninput="handleQueueSearch(this.value)" aria-label="Search files in queue">
+        </div>
+        <div class="queue-sort-box">
+          <select id="queueSortSelect" class="cyber-select queue-sort-select" onchange="handleQueueSort(this.value)" aria-label="Sort queue files">
+            <option value="default" selected>Sort: Newest First</option>
+            <option value="threat_desc">Sort: Threat 🔴</option>
+            <option value="size_desc">Sort: Size 📦</option>
+            <option value="uncleaned_first">Sort: Uncleaned ⚡</option>
+            <option value="name_asc">Sort: A → Z 🔤</option>
+          </select>
+        </div>
       </div>
       <div class="selection-actions">
         <button id="btnCleanSelected" class="btn-sel-action" onclick="cleanSelectedFiles()" disabled title="Clean only selected files">
@@ -222,6 +236,9 @@
         </button>
         <button id="btnRemoveSelected" class="btn-sel-action danger" onclick="removeSelectedFiles()" disabled title="Remove selected files from queue">
           🗑️ Remove Selected
+        </button>
+        <button id="btnPanicWipe" class="btn-sel-action panic" onclick="emergencyPanicClear()" title="Emergency Wipe: Instantly purge all memory and reset session (Esc)">
+          🚨 Panic Wipe
         </button>
       </div>
     </div>
@@ -257,6 +274,11 @@
         <span class="v-num" id="vHealthScore">100% (Grade A+)</span>
         <span class="v-lbl">Privacy Score</span>
       </div>
+    </div>
+    <div class="verify-action-bar">
+      <button type="button" class="btn-cert-export" onclick="exportComplianceReport()">
+        📜 View Official Executive Privacy Certificate (Print/PDF)
+      </button>
     </div>
   </section>
 

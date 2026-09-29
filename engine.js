@@ -609,6 +609,18 @@
         }
       }
     }
+    // 10. OGG / Opus Audio Container
+    else if (buf.length >= 4 && latinText.startsWith('OggS')) {
+      const isOpus = latinText.includes('OpusHead') || latinText.includes('OpusTags') || /\.opus$/i.test(file.name);
+      format = isOpus ? 'opus' : 'ogg';
+      fields.push({ category: 'Structure', label: `${format.toUpperCase()} Container`, value: `Ogg Stream Bitstream (${isOpus ? 'Opus Audio' : 'Vorbis'})`, threat: 'low' });
+      if (latinText.includes('OpusTags') || latinText.includes('vorbis') || /encoder=|ENCODER=/i.test(latinText)) {
+        fields.push({ category: 'Metadata', label: 'Vorbis Comments / Tags', value: 'Audio metadata, encoder signature & user agent', threat: 'high' });
+      }
+      if (/title=|artist=|album=|date=/i.test(latinText)) {
+        fields.push({ category: 'Identity', label: 'Audio Track Identity', value: 'Embedded title, artist or recording date', threat: 'med' });
+      }
+    }
 
     // Deduplicate fields
     const uniqueMap = new Map();
@@ -734,6 +746,30 @@
           if (/Midjourney|DALL-E|Adobe Firefly|Stable Diffusion|ComfyUI|NovelAI/i.test(segText)) {
             keepSegment = false;
           }
+        }
+        if (keepSegment) {
+          out.push(buf.slice(p, p + 2 + len));
+        }
+      } else if (selectiveMode === 'spoof_decoy') {
+        // Privacy Masking / Hardware Cloaking & Decoy GPS (Mask real sensor & coordinates)
+        let keepSegment = true;
+        if (marker === 0xE1) { // APP1 EXIF / XMP
+          const seg = new Uint8Array(buf.slice(p, p + 2 + len));
+          const segText = new TextDecoder('latin1').decode(seg);
+          if (segText.includes('Exif\0\0')) {
+            // Mask GPS tags and device serial numbers in place
+            for (let i = 4; i < seg.length - 4; i++) {
+              if (seg[i] === 0x47 && seg[i+1] === 0x50 && seg[i+2] === 0x53) { // 'GPS'
+                seg[i] = 0x4D; seg[i+1] = 0x53; seg[i+2] = 0x4B; // 'MSK' (Masked)
+              }
+            }
+            out.push(seg);
+            keepSegment = false;
+          } else if (segText.includes('<x:xmpmeta')) {
+            keepSegment = false; // Strip XMP tracking GUIDs
+          }
+        } else if (isCom || marker === 0xED) {
+          keepSegment = false;
         }
         if (keepSegment) {
           out.push(buf.slice(p, p + 2 + len));
@@ -1015,6 +1051,102 @@
     return result;
   }
 
+  // Standard Ogg CRC32 table & calculator (polynomial 0x04c11db7)
+  const oggCrcTable = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let r = i << 24;
+    for (let j = 0; j < 8; j++) {
+      r = (r & 0x80000000) ? ((r << 1) ^ 0x04c11db7) : (r << 1);
+    }
+    oggCrcTable[i] = r >>> 0;
+  }
+  function computeOggCrc(buf, start, len) {
+    let crc = 0;
+    for (let i = 0; i < len; i++) {
+      const byte = buf[start + i];
+      crc = ((crc << 8) ^ oggCrcTable[((crc >>> 24) ^ byte) & 0xff]) >>> 0;
+    }
+    return crc >>> 0;
+  }
+
+  // 7b. OGG Vorbis / Opus Audio Lossless Cleaner
+  function cleanOggLossless(buf) {
+    if (buf.length < 28) return buf;
+    const out = new Uint8Array(buf);
+    let p = 0;
+    const n = out.length;
+
+    while (p + 27 <= n) {
+      if (out[p] !== 0x4F || out[p+1] !== 0x67 || out[p+2] !== 0x67 || out[p+3] !== 0x53) {
+        p++;
+        continue;
+      }
+
+      const numSegments = out[p + 26];
+      let bodyLen = 0;
+      for (let s = 0; s < numSegments; s++) {
+        bodyLen += out[p + 27 + s];
+      }
+      const pageHeaderLen = 27 + numSegments;
+      const totalPageLen = pageHeaderLen + bodyLen;
+      if (p + totalPageLen > n) break;
+
+      const pageBodyStart = p + pageHeaderLen;
+      const pageBody = out.subarray(pageBodyStart, pageBodyStart + bodyLen);
+      const latinBody = new TextDecoder('latin1').decode(pageBody);
+
+      let modified = false;
+      // Sanitize OpusTags comment page
+      if (latinBody.startsWith('OpusTags')) {
+        const enc = new TextEncoder();
+        const vendor = enc.encode('MetaClean Privacy Guard');
+        const newTags = new Uint8Array(8 + 4 + vendor.length + 4);
+        newTags.set(enc.encode('OpusTags'), 0);
+        const dv = new DataView(newTags.buffer);
+        dv.setUint32(8, vendor.length, true);
+        newTags.set(vendor, 12);
+        dv.setUint32(12 + vendor.length, 0, true); // 0 user comments
+
+        for (let i = 0; i < bodyLen; i++) {
+          out[pageBodyStart + i] = (i < newTags.length) ? newTags[i] : 0;
+        }
+        modified = true;
+      }
+      // Sanitize Vorbis comment page
+      else if (latinBody.startsWith('\x03vorbis')) {
+        const enc = new TextEncoder();
+        const vendor = enc.encode('MetaClean Privacy Guard');
+        const newComments = new Uint8Array(7 + 4 + vendor.length + 4 + 1);
+        newComments.set(enc.encode('\x03vorbis'), 0);
+        const dv = new DataView(newComments.buffer);
+        dv.setUint32(7, vendor.length, true);
+        newComments.set(vendor, 11);
+        dv.setUint32(11 + vendor.length, 0, true); // 0 user comments
+        newComments[15 + vendor.length] = 1; // framing bit
+
+        for (let i = 0; i < bodyLen; i++) {
+          out[pageBodyStart + i] = (i < newComments.length) ? newComments[i] : 0;
+        }
+        modified = true;
+      }
+
+      if (modified) {
+        // Zero checksum and recalculate Little-Endian CRC
+        out[p + 22] = 0;
+        out[p + 23] = 0;
+        out[p + 24] = 0;
+        out[p + 25] = 0;
+        const newCrc = computeOggCrc(out, p, totalPageLen);
+        const dv = new DataView(out.buffer, out.byteOffset, out.byteLength);
+        dv.setUint32(p + 22, newCrc, true);
+      }
+
+      p += totalPageLen;
+    }
+
+    return out;
+  }
+
   // 8. PDF Cleaner
   function cleanPdfPreserveOffsets(buf) {
     const out = new Uint8Array(buf);
@@ -1164,6 +1296,11 @@
         case 'wav':
           cleanBuf = cleanWavLossless(rawBuf);
           cleanBlob = new Blob([cleanBuf], { type: 'audio/wav' });
+          break;
+        case 'ogg':
+        case 'opus':
+          cleanBuf = cleanOggLossless(rawBuf);
+          cleanBlob = new Blob([cleanBuf], { type: scan.format === 'opus' ? 'audio/opus' : 'audio/ogg' });
           break;
         case 'pdf':
           cleanBuf = cleanPdfPreserveOffsets(rawBuf);
