@@ -13,6 +13,7 @@
   const queue = new Map();
   let fileSequence = 0;
   let activeFilter = 'all';
+  let deferredPrompt = null;
 
   // ── Elements ──
   const dropZone = $('#drop');
@@ -25,6 +26,7 @@
   const cleanModeSelect = $('#cleanModeSelect');
   const optAnonymize = $('#optAnonymize');
   const optPreserveIcc = $('#optPreserveIcc');
+  const installAppBtn = $('#installAppBtn');
 
   const batchProgressContainer = $('#batchProgressContainer');
   const batchProgressBar = $('#batchProgressBar');
@@ -35,6 +37,24 @@
   const vBeforeCount = $('#vBeforeCount');
   const vAfterCount = $('#vAfterCount');
   const vSavingsBytes = $('#vSavingsBytes');
+
+  // ── Helper: Guess Mime Type from Filename ──
+  function guessMimeType(name) {
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    switch (ext) {
+      case 'jpg': case 'jpeg': return 'image/jpeg';
+      case 'png': return 'image/png';
+      case 'webp': return 'image/webp';
+      case 'svg': return 'image/svg+xml';
+      case 'mp3': return 'audio/mpeg';
+      case 'flac': return 'audio/flac';
+      case 'wav': return 'audio/wav';
+      case 'pdf': return 'application/pdf';
+      case 'mp4': return 'video/mp4';
+      case 'mov': return 'video/quicktime';
+      default: return 'application/octet-stream';
+    }
+  }
 
   // ── Drag & Drop Events ──
   ['dragenter', 'dragover'].forEach(evt => {
@@ -87,12 +107,30 @@
     }
   });
 
-  // ── Ingest Files ──
+  // ── Ingest Files (Supports Direct Files and .ZIP Archives) ──
   async function handleFiles(files) {
     if (!files.length) return;
     queueSection.classList.remove('hidden');
 
     for (const file of files) {
+      // 1. Auto-extract ZIP Archives in-memory
+      if (file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip') {
+        try {
+          const extracted = await window.readZip(file);
+          if (extracted && extracted.length > 0) {
+            const virtualFiles = extracted.map(item => new File([item.data], item.name, {
+              type: guessMimeType(item.name)
+            }));
+            await handleFiles(virtualFiles);
+          }
+        } catch (err) {
+          console.error('ZIP unpack error:', err);
+          alert('Could not unpack ZIP: ' + err.message);
+        }
+        continue;
+      }
+
+      // 2. Standard File Ingest
       const id = 'f_' + (++fileSequence);
       const entry = {
         id,
@@ -102,7 +140,8 @@
         scan: null,
         cleanResult: null,
         status: 'scanning',
-        forensicsOpen: false
+        forensicsOpen: false,
+        hexOpen: false
       };
       queue.set(id, entry);
       renderCardSkeleton(entry);
@@ -262,7 +301,7 @@
 
     // Buttons
     const inspectBtn = $('#btnInspect_' + id);
-    if (inspectBtn && entry.scan && entry.scan.fields.length > 0) {
+    if (inspectBtn && entry.scan) {
       inspectBtn.style.display = 'inline-flex';
       inspectBtn.textContent = `🔍 Forensics (${entry.scan.fields.length})`;
     }
@@ -290,24 +329,40 @@
     const drawer = $('#drawer_' + id);
     if (!drawer || !entry || !entry.scan) return;
 
-    if (!entry.scan.fields.length) {
-      drawer.innerHTML = `<div style="color:var(--muted); font-size:12px; font-style:italic;">No embedded metadata detected — this file is already clean.</div>`;
-      return;
+    // Provenance Card
+    let provHtml = '';
+    if (entry.scan.provenance) {
+      provHtml = `
+        <div class="provenance-card">
+          <div class="provenance-info">
+            <span class="provenance-badge">${entry.scan.provenance.badge}</span>
+            <span class="provenance-desc">${entry.scan.provenance.detail}</span>
+          </div>
+        </div>
+      `;
     }
 
-    const itemsHtml = entry.scan.fields.map(f => `
-      <div class="forensic-item">
-        <span class="forensic-label">${window.MetaCleanEngine.esc(f.category)} • ${window.MetaCleanEngine.esc(f.label)}</span>
-        <span class="forensic-val ${f.threat === 'critical' ? 'highlight' : ''}">${window.MetaCleanEngine.esc(f.value)}</span>
-      </div>
-    `).join('');
+    // Tags Grid
+    let tagsHtml = '';
+    if (entry.scan.fields.length) {
+      const itemsHtml = entry.scan.fields.map(f => `
+        <div class="forensic-item">
+          <span class="forensic-label">${window.MetaCleanEngine.esc(f.category)} • ${window.MetaCleanEngine.esc(f.label)}</span>
+          <span class="forensic-val ${f.threat === 'critical' ? 'highlight' : ''}">${window.MetaCleanEngine.esc(f.value)}</span>
+        </div>
+      `).join('');
+      tagsHtml = `<div class="forensics-grid">${itemsHtml}</div>`;
+    } else {
+      tagsHtml = `<div style="color:var(--muted); font-size:12px; font-style:italic; margin-bottom:8px;">No tracking metadata found — media is clean.</div>`;
+    }
 
+    // GPS Map Link
     let gpsHtml = '';
     if (entry.scan.gps) {
       const { lat, lon } = entry.scan.gps;
       const osmUrl = `https://www.openstreetmap.org/?mlat=${lat.toFixed(6)}&mlon=${lon.toFixed(6)}#map=16/${lat.toFixed(6)}/${lon.toFixed(6)}`;
       gpsHtml = `
-        <div style="margin-top:10px;">
+        <div style="margin-top:6px; margin-bottom:10px;">
           <a href="${osmUrl}" target="_blank" rel="noopener noreferrer" class="gps-map-link">
             <span>🗺️</span>
             <span>View Coordinates on OpenStreetMap (${lat.toFixed(4)}°, ${lon.toFixed(4)}°) ↗</span>
@@ -316,9 +371,46 @@
       `;
     }
 
+    // Audio Player Preview
+    let audioHtml = '';
+    if (['mp3', 'flac', 'wav'].includes(entry.format)) {
+      const audioUrl = entry.cleanResult ? URL.createObjectURL(entry.cleanResult.cleanBlob) : URL.createObjectURL(entry.file);
+      audioHtml = `
+        <div class="audio-preview-container">
+          <div style="font-size:11px; color:var(--muted); font-weight:700; margin-bottom:4px;">
+            🎵 ${entry.cleanResult ? 'Sanitized Audio Preview' : 'Source Audio Preview'}:
+          </div>
+          <audio controls src="${audioUrl}"></audio>
+        </div>
+      `;
+    }
+
+    // Hex Forensics Dump
+    const hexDumpData = entry.cleanResult?.cleanHexDump || entry.scan.hexDump || [];
+    let hexHtml = `
+      <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+        <button class="hex-toggle-btn" onclick="toggleHex('${entry.id}')">
+          [0101] Toggle Binary Hex Dump
+        </button>
+      </div>
+      <div class="hex-dump-panel ${entry.hexOpen ? '' : 'hidden'}" id="hex_${entry.id}">
+        <div style="font-size:10px; color:var(--muted); margin-bottom:6px;">OFFSET   HEX BYTES (First 128 Bytes)                       ASCII</div>
+        ${hexDumpData.map(r => `
+          <div class="hex-row">
+            <span class="hex-offset">${r.offset}</span>
+            <span class="hex-bytes">${r.hex}</span>
+            <span class="hex-ascii">${window.MetaCleanEngine.esc(r.ascii)}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
     drawer.innerHTML = `
-      <div class="forensics-grid">${itemsHtml}</div>
+      ${provHtml}
+      ${tagsHtml}
       ${gpsHtml}
+      ${audioHtml}
+      ${hexHtml}
     `;
   }
 
@@ -328,6 +420,14 @@
     if (!entry || !drawer) return;
     entry.forensicsOpen = !entry.forensicsOpen;
     drawer.classList.toggle('hidden', !entry.forensicsOpen);
+  };
+
+  window.toggleHex = function(id) {
+    const entry = queue.get(id);
+    const hexPanel = $('#hex_' + id);
+    if (!entry || !hexPanel) return;
+    entry.hexOpen = !entry.hexOpen;
+    hexPanel.classList.toggle('hidden', !entry.hexOpen);
   };
 
   window.removeFile = function(id) {
@@ -355,8 +455,10 @@
     }
 
     try {
+      const modeVal = cleanModeSelect.value;
       const options = {
-        mode: cleanModeSelect.value,
+        mode: modeVal === 'raster' ? 'raster' : 'lossless',
+        selectiveMode: modeVal === 'gps_only' ? 'gps_only' : 'all',
         preserveIcc: optPreserveIcc.checked,
         anonymize: optAnonymize.checked
       };
@@ -650,5 +752,32 @@
       closeArcade();
     }
   });
+
+  // ── Offline PWA Service Worker & Install Prompt ──
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(err => {
+        console.warn('PWA ServiceWorker registration failed:', err);
+      });
+    });
+  }
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installAppBtn) installAppBtn.classList.remove('hidden');
+  });
+
+  if (installAppBtn) {
+    installAppBtn.onclick = async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice && choice.outcome === 'accepted') {
+        installAppBtn.classList.add('hidden');
+      }
+      deferredPrompt = null;
+    };
+  }
 
 })();

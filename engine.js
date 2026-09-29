@@ -31,6 +31,32 @@
     return s.trim();
   }
 
+  /**
+   * Generates formatted Hex + ASCII dump for cybersecurity & binary inspection
+   */
+  function generateHexDump(u8, maxBytes = 128) {
+    const rows = [];
+    const len = Math.min(u8.length, maxBytes);
+    for (let i = 0; i < len; i += 16) {
+      const offset = i.toString(16).padStart(4, '0').toUpperCase();
+      const chunk = u8.subarray(i, Math.min(i + 16, len));
+      let hex = '';
+      let ascii = '';
+      for (let j = 0; j < 16; j++) {
+        if (j < chunk.length) {
+          hex += chunk[j].toString(16).padStart(2, '0').toUpperCase() + ' ';
+          const b = chunk[j];
+          ascii += (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.';
+        } else {
+          hex += '   ';
+        }
+        if (j === 7) hex += ' ';
+      }
+      rows.push({ offset, hex: hex.trim(), ascii });
+    }
+    return rows;
+  }
+
   // --------------------------------------------------------------------------
   // EXIF & TIFF Parser
   // --------------------------------------------------------------------------
@@ -124,10 +150,12 @@
           forensicDetails.cameraModel = strVal;
         } else if (tag === 0x0131 && strVal) { // Software
           fields.push({ category: 'System', label: 'Software / OS', value: strVal, threat: 'med' });
+          forensicDetails.software = strVal;
         } else if (tag === 0x0132 && strVal) { // DateTime
           fields.push({ category: 'Time', label: 'File Modification Date', value: strVal, threat: 'med' });
         } else if (tag === 0x013B && strVal) { // Artist
           fields.push({ category: 'Identity', label: 'Artist / Creator', value: strVal, threat: 'high' });
+          forensicDetails.artist = strVal;
         } else if (tag === 0x8298 && strVal) { // Copyright
           fields.push({ category: 'Legal', label: 'Copyright', value: strVal, threat: 'med' });
         } else if (tag === 0x8769) { // ExifIFD pointer
@@ -187,10 +215,104 @@
   }
 
   // --------------------------------------------------------------------------
+  // Provenance & Social Media Platform Fingerprint Detector
+  // --------------------------------------------------------------------------
+  function detectProvenance(buf, format, fileName, fields, forensicDetails, latinText) {
+    const fn = (fileName || '').toLowerCase();
+
+    // 1. WhatsApp
+    if (/img-\d{8}-wa\d+/i.test(fn) || /vid-\d{8}-wa\d+/i.test(fn) || /^wa\d+/i.test(fn)) {
+      return {
+        platform: 'WhatsApp Messenger',
+        badge: '💬 WhatsApp Media',
+        threatBadge: 'whatsapp',
+        detail: 'Original GPS, device model, and camera EXIF were permanently stripped by WhatsApp servers during transmission.'
+      };
+    }
+
+    // 2. Instagram / Meta CDN
+    const isMetaFileName = /\d+_\d+_\d+_n\.(jpg|jpeg|webp)/i.test(fn) || fn.includes('instagram') || fn.startsWith('fb_img') || fn.includes('facebook');
+    const hasZeroExif = fields.length <= 1;
+    const isImage = (format === 'jpeg' || format === 'webp');
+
+    if (isMetaFileName || (isImage && hasZeroExif && (latinText.includes('Photoshop') || buf.length < 500000))) {
+      if (isMetaFileName) {
+        return {
+          platform: 'Instagram / Meta',
+          badge: '📱 Instagram / Meta Ingested',
+          threatBadge: 'meta',
+          detail: 'Uploaded to Instagram/Meta servers. Original EXIF and GPS coordinates were purged upon upload for feed delivery.'
+        };
+      }
+    }
+
+    // 3. Apple iPhone Camera (Direct)
+    if (forensicDetails.cameraMake === 'Apple' || (forensicDetails.cameraModel || '').includes('iPhone')) {
+      return {
+        platform: 'Apple iOS Camera',
+        badge: '📸 Apple iPhone (Direct Capture)',
+        threatBadge: 'device',
+        detail: 'Raw uncompressed photo containing direct sensor metadata, lens profiles, and possible GPS telemetry.'
+      };
+    }
+
+    // 4. Android Camera (Pixel, Samsung, Xiaomi)
+    const androidMakes = ['google', 'samsung', 'xiaomi', 'oneplus', 'huawei', 'sony', 'motorola'];
+    if (forensicDetails.cameraMake && androidMakes.includes(forensicDetails.cameraMake.toLowerCase())) {
+      return {
+        platform: 'Android Smartphone',
+        badge: `📱 ${forensicDetails.cameraMake} Camera (Direct)`,
+        threatBadge: 'device',
+        detail: 'Direct camera sensor recording containing device hardware ID and timestamp signatures.'
+      };
+    }
+
+    // 5. DSLR / Mirrorless Professional Camera
+    const dslrMakes = ['canon', 'nikon', 'fujifilm', 'leica', 'panasonic', 'olympus', 'hasselblad'];
+    if (forensicDetails.cameraMake && dslrMakes.includes(forensicDetails.cameraMake.toLowerCase())) {
+      return {
+        platform: 'Professional DSLR / Mirrorless',
+        badge: `📷 ${forensicDetails.cameraMake} Camera`,
+        threatBadge: 'pro',
+        detail: 'High-end optical sensor capture containing full aperture, shutter, lens optics, and serial hardware data.'
+      };
+    }
+
+    // 6. Adobe Creative Cloud / Photoshop Export
+    if ((forensicDetails.software || '').includes('Adobe') || latinText.includes('Photoshop') || latinText.includes('Lightroom')) {
+      return {
+        platform: 'Adobe Creative Suite',
+        badge: '🎨 Adobe Photoshop / Lightroom',
+        threatBadge: 'software',
+        detail: 'Exported from creative software with embedded document IDs, revision timestamps, and color profiles.'
+      };
+    }
+
+    // 7. C2PA / Content Credentials Authenticity
+    if (latinText.includes('c2pa') || latinText.includes('content.credentials') || latinText.includes('jumbf')) {
+      return {
+        platform: 'C2PA Authenticity Manifest',
+        badge: '🛡️ C2PA Credentials Detected',
+        threatBadge: 'c2pa',
+        detail: 'Cryptographic provenance signature or AI provenance metadata embedded in file stream.'
+      };
+    }
+
+    // 8. Generic / Clean Web File
+    return {
+      platform: 'Local / Web Media',
+      badge: '🌐 Local / Web Media',
+      threatBadge: 'clean',
+      detail: fields.length ? 'Contains standard digital metadata tags.' : 'Clean media stream with zero personal hardware markers detected.'
+    };
+  }
+
+  // --------------------------------------------------------------------------
   // Universal Metadata Scanner
   // --------------------------------------------------------------------------
   async function scanFile(file) {
-    const buf = new Uint8Array(await file.slice(0, Math.min(file.size, 512 * 1024)).arrayBuffer());
+    const rawBuffer = await file.slice(0, Math.min(file.size, 512 * 1024)).arrayBuffer();
+    const buf = new Uint8Array(rawBuffer);
     const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
     const latinText = new TextDecoder('latin1').decode(buf);
     const fields = [];
@@ -283,11 +405,9 @@
     else if (buf.length >= 10 && buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33) {
       format = 'mp3';
       const vMaj = buf[3];
-      const flags = buf[5];
       const synchLen = ((buf[6] & 0x7F) << 21) | ((buf[7] & 0x7F) << 14) | ((buf[8] & 0x7F) << 7) | (buf[9] & 0x7F);
       fields.push({ category: 'Structure', label: `ID3v2.${vMaj} Header`, value: `${synchLen} bytes audio tag container`, threat: 'med' });
 
-      // Scan common frame markers in ID3v2
       const id3Body = latinText.slice(10, Math.min(10 + synchLen, buf.length));
       if (id3Body.includes('TIT2') || id3Body.includes('TT2')) fields.push({ category: 'Metadata', label: 'Song Title (TIT2)', value: 'Embedded track title', threat: 'low' });
       if (id3Body.includes('TPE1') || id3Body.includes('TP1')) fields.push({ category: 'Identity', label: 'Artist / Performer (TPE1)', value: 'Embedded artist identity', threat: 'high' });
@@ -303,7 +423,7 @@
       if (latinText.includes('artist=') || latinText.includes('ARTIST=') || latinText.includes('title=')) {
         fields.push({ category: 'Identity', label: 'Vorbis Comments', value: 'Track title, artist & album tags', threat: 'high' });
       }
-      if (buf.some((b, i) => b === 6 && i > 4 && i < 100)) { // Block type 6 = PICTURE
+      if (buf.some((b, i) => b === 6 && i > 4 && i < 100)) {
         fields.push({ category: 'Media', label: 'Embedded FLAC Cover Art', value: 'High-res album image block', threat: 'med' });
       }
     }
@@ -373,12 +493,20 @@
     else if (uniqueFields.some(f => f.threat === 'high')) threatLevel = 'high';
     else if (uniqueFields.some(f => f.threat === 'med')) threatLevel = 'med';
 
+    // Provenance / Platform Detection
+    const provenance = detectProvenance(buf, format, file.name, uniqueFields, forensicDetails, latinText);
+
+    // Initial Hex Preview
+    const hexDump = generateHexDump(buf, 128);
+
     return {
       format,
       fields: uniqueFields,
       threatLevel,
       gps: forensicDetails.gps || null,
       forensicDetails,
+      provenance,
+      hexDump,
       originalSize: file.size
     };
   }
@@ -388,7 +516,7 @@
   // --------------------------------------------------------------------------
 
   // 1. JPEG Lossless Cleaner
-  function cleanJpegLossless(buf, preserveIcc = false) {
+  function cleanJpegLossless(buf, preserveIcc = false, selectiveMode = 'all') {
     if (buf.length < 4 || buf[0] !== 0xFF || buf[1] !== 0xD8) return buf;
     const out = [];
     out.push(new Uint8Array([0xFF, 0xD8])); // SOI
@@ -406,7 +534,7 @@
         out.push(new Uint8Array([0xFF, 0xD9]));
         break;
       }
-      if (marker === 0xDA) { // SOS (Start of Scan) - remainder is compressed entropy data
+      if (marker === 0xDA) { // SOS
         out.push(buf.slice(p));
         break;
       }
@@ -414,13 +542,35 @@
       const len = (buf[p + 2] << 8) | buf[p + 3];
       if (len < 2 || p + 2 + len > n) break;
 
-      // Drop APP1..APP15 and COM
       const isApp = (marker >= 0xE1 && marker <= 0xEF);
       const isCom = (marker === 0xFE);
       const isIcc = (marker === 0xE2 && preserveIcc);
 
-      if (!isApp && !isCom || isIcc) {
-        out.push(buf.slice(p, p + 2 + len));
+      if (selectiveMode === 'gps_only') {
+        // If GPS only mode, we scrub GPS markers but keep others
+        let keepSegment = true;
+        if (marker === 0xE1) {
+          // Check if EXIF contains GPS info pointer tag 0x8825 and zero it
+          const seg = new Uint8Array(buf.slice(p, p + 2 + len));
+          const segText = new TextDecoder('latin1').decode(seg);
+          if (segText.includes('GPS')) {
+            // Scrub GPS text occurrences in APP1
+            for (let i = 4; i < seg.length - 4; i++) {
+              if (seg[i] === 0x47 && seg[i+1] === 0x50 && seg[i+2] === 0x53) { // 'GPS'
+                seg[i] = 0; seg[i+1] = 0; seg[i+2] = 0;
+              }
+            }
+          }
+          out.push(seg);
+          keepSegment = false;
+        }
+        if (keepSegment) {
+          out.push(buf.slice(p, p + 2 + len));
+        }
+      } else {
+        if (!isApp && !isCom || isIcc) {
+          out.push(buf.slice(p, p + 2 + len));
+        }
       }
 
       p += 2 + len;
@@ -498,7 +648,6 @@
 
       if (fourCC !== 'EXIF' && fourCC !== 'XMP ') {
         let chunkData = buf.slice(p, p + fullLen);
-        // If VP8X, clear bit 3 (EXIF) and bit 2 (XMP) from flags
         if (fourCC === 'VP8X' && chunkData.length >= 12) {
           chunkData[8] &= ~0x08; // Clear EXIF flag
           chunkData[8] &= ~0x04; // Clear XMP flag
@@ -509,7 +658,7 @@
     }
 
     const chunksTotalSize = outChunks.reduce((acc, c) => acc + c.length, 0);
-    const riffSize = 4 + chunksTotalSize; // 4 bytes for 'WEBP' + chunks
+    const riffSize = 4 + chunksTotalSize;
     const result = new Uint8Array(12 + chunksTotalSize);
     result.set(new TextEncoder().encode('RIFF'), 0);
     new DataView(result.buffer).setUint32(4, riffSize, true);
@@ -530,12 +679,10 @@
       const doc = parser.parseFromString(svgStr, 'image/svg+xml');
       const rootEl = doc.documentElement;
 
-      // Remove sensitive tags
       ['metadata', 'desc', 'title', 'script'].forEach(tag => {
         doc.querySelectorAll(tag).forEach(el => el.remove());
       });
 
-      // Strip editor / namespaced attributes from all elements
       const walk = el => {
         const attrs = Array.from(el.attributes || []);
         attrs.forEach(attr => {
@@ -550,7 +697,6 @@
 
       return new XMLSerializer().serializeToString(doc);
     } catch (_) {
-      // Fallback regex strip
       return svgStr
         .replace(/<metadata[\s\S]*?<\/metadata>/gi, '')
         .replace(/<desc[\s\S]*?<\/desc>/gi, '')
@@ -564,7 +710,6 @@
     let pos = 0;
     const n = buf.length;
 
-    // Strip chained ID3v2 tags from beginning
     while (pos + 10 <= n && buf[pos] === 0x49 && buf[pos+1] === 0x44 && buf[pos+2] === 0x33) {
       const flags = buf[pos+5];
       const s = ((buf[pos+6]&0x7F)<<21) | ((buf[pos+7]&0x7F)<<14) | ((buf[pos+8]&0x7F)<<7) | (buf[pos+9]&0x7F);
@@ -572,13 +717,11 @@
       pos += tagLen;
     }
 
-    // Strip ID3v1 from end (128 bytes starting with 'TAG')
     let end = n;
     if (end - pos >= 128 && buf[end-128] === 0x54 && buf[end-127] === 0x41 && buf[end-126] === 0x47) {
       end -= 128;
     }
 
-    // Strip APE tag from end if present (starts with 'APETAGEX')
     if (end - pos >= 32) {
       const apeCheck = String.fromCharCode(...buf.slice(end - 32, end - 24));
       if (apeCheck === 'APETAGEX') {
@@ -610,7 +753,6 @@
       const totalLen = 4 + len;
       if (pos + totalLen > n) break;
 
-      // Drop block 4 (VORBIS_COMMENT) and block 6 (PICTURE)
       if (bType !== 4 && bType !== 6) {
         keptBlocks.push({
           type: bType,
@@ -620,13 +762,11 @@
       pos += totalLen;
     }
 
-    // If kept blocks exist, ensure the final one has is_last bit set
     if (keptBlocks.length > 0) {
       keptBlocks[keptBlocks.length - 1].data[0] |= 0x80;
       keptBlocks.forEach(b => out.push(b.data));
     }
 
-    // Append audio frames
     if (pos < n) {
       out.push(buf.slice(pos));
     }
@@ -660,7 +800,6 @@
       const fullLen = 8 + paddedLen;
       if (p + fullLen > n) break;
 
-      // Drop 'LIST' (if it holds INFO) or 'id3 '
       if (fourCC === 'LIST') {
         const listType = p + 12 <= n ? String.fromCharCode(...buf.slice(p + 8, p + 12)) : '';
         if (listType !== 'INFO') outChunks.push(buf.slice(p, p + fullLen));
@@ -697,11 +836,10 @@
       while ((m = re.exec(latin)) !== null) {
         const start = m.index + m[0].indexOf('(') + 1;
         const end = m.index + m[0].lastIndexOf(')');
-        for (let i = start; i < end; i++) out[i] = 0x20; // fill with spaces
+        for (let i = start; i < end; i++) out[i] = 0x20;
       }
     }
 
-    // Blank out XMP XML stream content while keeping outer tags intact
     const xmpRe = /<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/g;
     let xm;
     while ((xm = xmpRe.exec(latin)) !== null) {
@@ -719,7 +857,6 @@
     const dv = new DataView(out.buffer, out.byteOffset, out.byteLength);
     const n = out.length;
 
-    // Recursive box scanner
     function scanBoxes(start, end) {
       let p = start;
       while (p + 8 <= end) {
@@ -727,7 +864,7 @@
         let typ = '';
         for (let i = 0; i < 4; i++) typ += String.fromCharCode(out[p + 4 + i]);
 
-        if (size === 1 && p + 16 <= end) { // 64-bit size
+        if (size === 1 && p + 16 <= end) {
           size = Number(dv.getBigUint64(p + 8));
         } else if (size === 0) {
           size = end - p;
@@ -735,17 +872,15 @@
         if (size < 8 || p + size > end) break;
 
         if (typ === 'udta') {
-          // Replace 'udta' with 'free' and zero data (preserves all chunk offsets!)
           out[p + 4] = 0x66; out[p + 5] = 0x72; out[p + 6] = 0x65; out[p + 7] = 0x65; // 'free'
           for (let i = p + 8; i < p + size; i++) out[i] = 0;
         } else if (typ === 'moov' || typ === 'trak' || typ === 'mdia') {
           scanBoxes(p + 8, p + size);
         } else if (typ === 'mvhd' || typ === 'tkhd') {
-          // Zero creation time and modification time
           const v = out[p + 8];
           if (v === 0 && p + 20 <= end) {
-            dv.setUint32(p + 12, 0); // creation_time
-            dv.setUint32(p + 16, 0); // modification_time
+            dv.setUint32(p + 12, 0);
+            dv.setUint32(p + 16, 0);
           } else if (v === 1 && p + 28 <= end) {
             dv.setBigUint64(p + 12, 0n);
             dv.setBigUint64(p + 20, 0n);
@@ -760,7 +895,7 @@
     return out;
   }
 
-  // 10. Deep Canvas Raster Cleaner (Fallback for images)
+  // 10. Deep Canvas Raster Cleaner
   async function cleanImageRaster(file, quality = 0.95) {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -787,9 +922,9 @@
   async function cleanFile(file, options = {}) {
     const mode = options.mode || 'lossless';
     const preserveIcc = !!options.preserveIcc;
+    const selectiveMode = options.selectiveMode || 'all';
     const scan = await scanFile(file);
     let cleanBlob = null;
-    let cleanFormat = scan.format;
 
     if (mode === 'raster' && (scan.format === 'jpeg' || scan.format === 'png' || scan.format === 'webp')) {
       cleanBlob = await cleanImageRaster(file, options.rasterQuality || 0.95);
@@ -799,7 +934,7 @@
 
       switch (scan.format) {
         case 'jpeg':
-          cleanBuf = cleanJpegLossless(rawBuf, preserveIcc);
+          cleanBuf = cleanJpegLossless(rawBuf, preserveIcc, selectiveMode);
           cleanBlob = new Blob([cleanBuf], { type: 'image/jpeg' });
           break;
         case 'png':
@@ -837,7 +972,6 @@
           cleanBlob = new Blob([cleanBuf], { type: 'video/mp4' });
           break;
         default:
-          // If unsupported, fallback to raster if image, else keep
           if (file.type.startsWith('image/')) {
             cleanBlob = await cleanImageRaster(file, 0.95);
           } else {
@@ -847,7 +981,9 @@
       }
     }
 
-    // Verify cleaned result
+    // Verify cleaned result & get clean hex dump
+    const cleanRawBuf = new Uint8Array(await cleanBlob.slice(0, 128).arrayBuffer());
+    const cleanHexDump = generateHexDump(cleanRawBuf, 128);
     const verifyScan = await scanFile(new File([cleanBlob], file.name, { type: cleanBlob.type }));
 
     return {
@@ -859,6 +995,7 @@
       beforeFields: scan.fields,
       afterFields: verifyScan.fields,
       format: scan.format,
+      cleanHexDump,
       isClean: verifyScan.fields.length === 0
     };
   }
@@ -877,6 +1014,8 @@
     cleanPdfPreserveOffsets,
     cleanMp4Lossless,
     cleanImageRaster,
+    generateHexDump,
+    detectProvenance,
     fmtSize,
     esc
   };

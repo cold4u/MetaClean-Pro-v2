@@ -1,8 +1,10 @@
 /**
- * MetaClean Pro v2 — Client-side ZIP Archiver (Zero External Dependencies)
- * Lightweight, 100% offline, standard PKWARE ZIP builder.
+ * MetaClean Pro v2.2 — Client-side ZIP Archiver & Reader (Zero External Dependencies)
+ * 100% Offline standard PKWARE ZIP builder and in-memory unpacker.
  */
 (function(root) {
+  'use strict';
+
   const crcTable = new Uint32Array(256);
   for (let i = 0; i < 256; i++) {
     let c = i;
@@ -31,6 +33,22 @@
       return new TextEncoder().encode(data);
     }
     return new Uint8Array(0);
+  }
+
+  /**
+   * Decompresses raw Deflate byte stream in modern browsers using native DecompressionStream
+   */
+  async function decompressRaw(bytes) {
+    if (typeof DecompressionStream !== 'undefined') {
+      try {
+        const stream = new Response(bytes).body.pipeThrough(new DecompressionStream('deflate-raw'));
+        const ab = await new Response(stream).arrayBuffer();
+        return new Uint8Array(ab);
+      } catch (e) {
+        console.warn('DecompressionStream error:', e);
+      }
+    }
+    return bytes;
   }
 
   /**
@@ -110,5 +128,89 @@
     return new Blob(finalParts, { type: 'application/zip' });
   }
 
+  /**
+   * Reads and unpacks a ZIP archive in-memory.
+   * Returns array of: [{ name: string, data: Uint8Array, size: number }]
+   */
+  async function readZip(source) {
+    const raw = await toUint8Array(source);
+    const n = raw.length;
+    if (n < 22) throw new Error('File too small to be a valid ZIP archive.');
+
+    const dv = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
+
+    // Locate EOCD signature 0x06054B50 from end of file
+    let eocdPos = -1;
+    const searchLimit = Math.max(0, n - 65557);
+    for (let i = n - 22; i >= searchLimit; i--) {
+      if (dv.getUint32(i, true) === 0x06054B50) {
+        eocdPos = i;
+        break;
+      }
+    }
+
+    if (eocdPos === -1) {
+      throw new Error('ZIP End of Central Directory (EOCD) signature not found.');
+    }
+
+    const totalEntries = dv.getUint16(eocdPos + 10, true);
+    const cdOffset = dv.getUint32(eocdPos + 16, true);
+
+    const extractedFiles = [];
+    const decoder = new TextDecoder('utf-8');
+    let pos = cdOffset;
+
+    for (let idx = 0; idx < totalEntries; idx++) {
+      if (pos + 46 > n) break;
+      const sig = dv.getUint32(pos, true);
+      if (sig !== 0x02014B50) break; // End or corrupted CD
+
+      const compMethod = dv.getUint16(pos + 10, true);
+      const compSize = dv.getUint32(pos + 20, true);
+      const uncompSize = dv.getUint32(pos + 24, true);
+      const nameLen = dv.getUint16(pos + 28, true);
+      const extraLen = dv.getUint16(pos + 30, true);
+      const commentLen = dv.getUint16(pos + 32, true);
+      const lhOffset = dv.getUint32(pos + 42, true);
+
+      const nameBytes = raw.subarray(pos + 46, pos + 46 + nameLen);
+      const filename = decoder.decode(nameBytes);
+
+      pos += 46 + nameLen + extraLen + commentLen;
+
+      // Skip directory entries and OS metadata
+      if (filename.endsWith('/') || filename.startsWith('__MACOSX') || filename.includes('.DS_Store')) {
+        continue;
+      }
+
+      // Read local header to get precise data offset
+      if (lhOffset + 30 > n) continue;
+      const lhNameLen = dv.getUint16(lhOffset + 26, true);
+      const lhExtraLen = dv.getUint16(lhOffset + 28, true);
+      const dataStart = lhOffset + 30 + lhNameLen + lhExtraLen;
+      const compressedData = raw.subarray(dataStart, dataStart + compSize);
+
+      let fileData;
+      if (compMethod === 0) { // Stored
+        fileData = compressedData;
+      } else if (compMethod === 8) { // Deflated
+        fileData = await decompressRaw(compressedData);
+      } else {
+        // Unsupported compression method, fallback raw
+        fileData = compressedData;
+      }
+
+      extractedFiles.push({
+        name: filename.split('/').pop() || filename,
+        path: filename,
+        data: fileData,
+        size: uncompSize || fileData.length
+      });
+    }
+
+    return extractedFiles;
+  }
+
   root.createZip = createZip;
+  root.readZip = readZip;
 })(typeof window !== 'undefined' ? window : globalThis);

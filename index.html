@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MetaClean Pro v2.2 — Universal Privacy & Metadata Eliminator</title>
 <meta name="description" content="100% client-side privacy suite to inspect and strip EXIF, GPS coordinates, camera serials, author identities, ID3 audio tags, and PDF metadata with zero quality loss.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7952ff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -69,6 +71,10 @@
     <i class="version-tag">PRO v2.2</i>
   </div>
   <div class="header-right">
+    <button id="installAppBtn" class="pwa-install-btn hidden" title="Install MetaClean Pro as Desktop/Mobile App">
+      <span>📥</span>
+      <span>Install App</span>
+    </button>
     <div class="privacy-status" title="No files are ever uploaded">
       <span class="live-dot"></span>
       <span>100% Client-Side • Zero Uploads</span>
@@ -86,13 +92,13 @@
     <div class="eyebrow">UNIVERSAL CLIENT-SIDE PRIVACY ENGINE</div>
     <h1>Erase Hidden Metadata.<br><em>Keep 100% Quality.</em></h1>
     <p>
-      Inspect and strip exact GPS coordinates, camera serial numbers, capture timestamps, author identities, and tracking payloads from <strong>Images, Audio, PDFs, and Videos</strong> — right inside your browser with bit-exact lossless preservation.
+      Inspect and strip exact GPS coordinates, camera serial numbers, capture timestamps, author identities, and tracking payloads from <strong>Images, Audio, PDFs, Videos, and ZIP Archives</strong> — right inside your browser with bit-exact lossless preservation.
     </p>
 
     <!-- Multi-File Dropzone -->
     <div class="drop-container">
       <label class="drop" id="drop" tabindex="0" role="button" aria-label="Drop files here or click to browse">
-        <input id="fileInput" type="file" multiple accept="image/jpeg,image/png,image/webp,image/svg+xml,audio/mpeg,audio/flac,audio/wav,application/pdf,video/mp4,video/quicktime,.jpg,.jpeg,.png,.webp,.svg,.mp3,.flac,.wav,.pdf,.mp4,.mov">
+        <input id="fileInput" type="file" multiple accept="image/jpeg,image/png,image/webp,image/svg+xml,audio/mpeg,audio/flac,audio/wav,application/pdf,video/mp4,video/quicktime,application/zip,.jpg,.jpeg,.png,.webp,.svg,.mp3,.flac,.wav,.pdf,.mp4,.mov,.zip">
         <div class="upload-icon-box">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -100,8 +106,8 @@
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
         </div>
-        <b>Drop files here or click to browse</b>
-        <span>Images, Audio, Documents, & Videos</span>
+        <b>Drop files or .ZIP archives here to inspect & clean</b>
+        <span>Images, Audio, Documents, Videos, or Bundled ZIPs</span>
         <div class="format-chips">
           <span class="chip">JPEG</span>
           <span class="chip">PNG</span>
@@ -112,6 +118,7 @@
           <span class="chip">WAV</span>
           <span class="chip">PDF</span>
           <span class="chip">MP4 / MOV</span>
+          <span class="chip highlight">📦 ZIP ARCHIVES</span>
         </div>
         <div class="paste-hint">
           <kbd>Ctrl</kbd> + <kbd>V</kbd> (or <kbd>⌘</kbd>+<kbd>V</kbd>) anywhere to paste clipboard screenshots
@@ -148,6 +155,7 @@
           <label for="cleanModeSelect">Scrubbing Mode:</label>
           <select id="cleanModeSelect" class="cyber-select">
             <option value="lossless" selected>⚡ Lossless Binary Scrub (100% Quality & Instant)</option>
+            <option value="gps_only">📍 Strip GPS & Location Only (Preserve Camera Settings)</option>
             <option value="raster">🛡️ Deep Raster Re-render (Anti-Steganography / Visual Only)</option>
           </select>
         </div>
@@ -237,9 +245,9 @@
         <span>PDFs retain original creator usernames, operating system paths, software suites, and revision history timestamps.</span>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">🎥</div>
-        <b>Video Locations & User Data</b>
-        <span>MP4 and QuickTime files record recording time in <code>mvhd</code> headers and GPS coordinates in <code>udta</code> user atoms.</span>
+        <div class="feat-icon">📦</div>
+        <b>ZIP Ingest & Auto-Unpack</b>
+        <span>Drop compressed ZIP archives to inspect, audit, and clean entire batches of files in-memory without extracting them manually.</span>
       </div>
     </div>
     <p class="limit">
