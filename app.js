@@ -1,122 +1,654 @@
-const $=s=>document.querySelector(s), input=$("#file"), drop=$("#drop"), app=$("#app");
-let original=null,cleanBlob=null;
-const fmt=n=>n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(2)+" MB";
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-input.onchange=()=>input.files[0]&&load(input.files[0]);
-["dragenter","dragover"].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.add("drag")}));
-["dragleave","drop"].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.remove("drag")}));
-drop.ondrop=e=>{let f=e.dataTransfer.files[0];if(f&&/^image\/(jpeg|png|webp)$/.test(f.type))load(f)};
-async function load(f){original=f;app.classList.remove("hidden");$("#thumb").src=URL.createObjectURL(f);$("#fname").textContent=f.name;$("#finfo").textContent=`${f.type} • ${fmt(f.size)}`;$("#result").classList.add("hidden");$("#meter").style.width="15%";$("#scanState").textContent="Scanning…";let m=await scan(f);$("#meter").style.width="100%";$("#scanState").textContent="Scan complete";render($("#before"),m);$("#count").textContent=m.length}
-function add(m,label,value){m.push({label,value})}
-async function scan(file){
- const m=[],buf=new Uint8Array(await file.slice(0,256*1024).arrayBuffer()),text=new TextDecoder("latin1").decode(buf);
- if(file.type==="image/jpeg"){let p=2;while(p+4<buf.length&&buf[p]===255){let marker=buf[p+1],len=(buf[p+2]<<8)|buf[p+3];if(len<2||p+2+len>buf.length)break;let seg=text.slice(p+4,p+2+len);if(marker===225&&seg.startsWith("Exif"))add(m,"EXIF","Embedded EXIF block");else if(marker===225&&/xmp/i.test(seg))add(m,"XMP","Embedded XMP block");else if(marker===237)add(m,"IPTC / APP13","JPEG application segment");else if(marker>=224&&marker<=239)add(m,`JPEG APP${marker-224}`,"Application segment");p+=2+len}}
- if(file.type==="image/png"){let dv=new DataView(buf.buffer),p=8;while(p+12<=buf.length){let len=dv.getUint32(p);if(p+12+len>buf.length)break;let typ=text.slice(p+4,p+8);if(["tEXt","zTXt","iTXt"].includes(typ))add(m,`PNG ${typ}`,"Embedded text metadata");p+=12+len;if(typ==="IEND")break}}
- [["GPS","GPSLatitude|GPSLongitude|GPSPosition"],["Camera","Make|Model|LensModel|LensMake"],["Date","DateTimeOriginal|CreateDate|DateTimeDigitized"],["Software","Software|CreatorTool|ProcessingSoftware"],["Author","Artist|Author|Creator"],["Copyright","Copyright"],["C2PA / provenance","c2pa|content.credentials|jumbf"]].forEach(([l,p])=>{if(new RegExp(p,"i").test(text))add(m,l,"Metadata marker detected")});
- return [...new Map(m.map(x=>[x.label+"|"+x.value,x])).values()]
-}
-function render(el,m){el.innerHTML=m.length?m.map(x=>`<div class="row"><span>${esc(x.label)}</span><span>${esc(x.value)}</span></div>`).join(""):`<div class="empty">No common metadata detected.</div>`}
-$("#clean").onclick=async()=>{
- if(!original)return;let b=$("#clean");b.disabled=true;b.textContent="Rebuilding…";
- try{let img=new Image();img.src=URL.createObjectURL(original);await img.decode();let c=document.createElement("canvas");c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext("2d").drawImage(img,0,0);let type=original.type==="image/png"?"image/png":"image/jpeg";cleanBlob=await new Promise(r=>c.toBlob(r,type,type==="image/jpeg"?.95:undefined));let after=await scan(new File([cleanBlob],"clean."+ (type==="image/png"?"png":"jpg"),{type}));render($("#after"),after);$("#removed").textContent=$("#count").textContent;$("#remaining").textContent=after.length;$("#resultBadge").textContent=after.length?"Review remaining fields":"Clean";$("#resultBadge").style.color=after.length?"#f2b84b":"#49d39b";$("#result").classList.remove("hidden");$("#result").scrollIntoView({behavior:"smooth",block:"start"})}catch(e){alert("Could not process this image. Try JPEG or PNG.")}finally{b.disabled=false;b.textContent="Clean image"}};
-$("#download").onclick=()=>{if(!cleanBlob)return;let base=original.name.replace(/\.[^.]+$/,"");let ext=original.type==="image/png"?"png":"jpg";let a=document.createElement("a");a.href=URL.createObjectURL(cleanBlob);a.download=base+"-clean."+ext;a.click()};
-$("#reset").onclick=$("#again").onclick=()=>{app.classList.add("hidden");input.value="";original=null;cleanBlob=null;window.scrollTo({top:0,behavior:"smooth"})};
+/**
+ * MetaClean Pro v2.2 — Application Controller & Reactive UI
+ * Universal Multi-Format Metadata Eliminator with 29-Game Cyber Arcade Cabinet
+ */
+(function() {
+  'use strict';
 
-// ============================================================================
-// Cyber Arcade Hub Launcher (29-Game Master Arcade Cabinet)
-// ============================================================================
-const arcadeModal = $("#arcadeModal");
-const arcadeIframe = $("#arcadeIframe");
-const arcadeTabLink = $("#arcadeTabLink");
+  // ── DOM Helpers ──
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
 
-const arcadeGames = [
-  { id: "turbo", btnId: "#tabArcadeTurbo", bannerId: "#arcadeBannerBtn", path: "game/index.html" },
-  { id: "puzzle", btnId: "#tabArcadePuzzle", bannerId: "#arcadePuzzleBtn", path: "puzzle/index.html" },
-  { id: "breaker", btnId: "#tabArcadeBreaker", bannerId: "#arcadeBreakerBtn", path: "breaker/index.html" },
-  { id: "strike", btnId: "#tabArcadeStrike", bannerId: "#arcadeStrikeBtn", path: "strike/index.html" },
-  { id: "snake", btnId: "#tabArcadeSnake", bannerId: "#arcadeSnakeBtn", path: "snake/index.html" },
-  { id: "jump", btnId: "#tabArcadeJump", bannerId: "#arcadeJumpBtn", path: "jump/index.html" },
-  { id: "pulse", btnId: "#tabArcadePulse", bannerId: "#arcadePulseBtn", path: "pulse/index.html" },
-  { id: "runner", btnId: "#tabArcadeRunner", bannerId: "#arcadeRunnerBtn", path: "runner/index.html" },
-  { id: "defense", btnId: "#tabArcadeDefense", bannerId: "#arcadeDefenseBtn", path: "defense/index.html" },
-  { id: "survivor", btnId: "#tabArcadeSurvivor", bannerId: "#arcadeSurvivorBtn", path: "survivor/index.html" },
-  { id: "portal", btnId: "#tabArcadePortal", bannerId: "#arcadePortalBtn", path: "portal/index.html" },
-  { id: "rogue", btnId: "#tabArcadeRogue", bannerId: "#arcadeRogueBtn", path: "rogue/index.html" },
-  { id: "tower", btnId: "#tabArcadeTower", bannerId: "#arcadeTowerBtn", path: "tower/index.html" },
-  { id: "kart", btnId: "#tabArcadeKart", bannerId: "#arcadeKartBtn", path: "kart/index.html" },
-  { id: "match", btnId: "#tabArcadeMatch", bannerId: "#arcadeMatchBtn", path: "match/index.html" },
-  { id: "pinball", btnId: "#tabArcadePinball", bannerId: "#arcadePinballBtn", path: "pinball/index.html" },
-  { id: "shinobi", btnId: "#tabArcadeShinobi", bannerId: "#arcadeShinobiBtn", path: "shinobi/index.html" },
-  { id: "deck", btnId: "#tabArcadeDeck", bannerId: "#arcadeDeckBtn", path: "deck/index.html" },
-  { id: "flight", btnId: "#tabArcadeFlight", bannerId: "#arcadeFlightBtn", path: "flight/index.html" },
-  { id: "billiards", btnId: "#tabArcadeBilliards", bannerId: "#arcadeBilliardsBtn", path: "billiards/index.html" },
-  { id: "tactics", btnId: "#tabArcadeTactics", bannerId: "#arcadeTacticsBtn", path: "tactics/index.html" },
-  { id: "mining", btnId: "#tabArcadeMining", bannerId: "#arcadeMiningBtn", path: "mining/index.html" },
-  { id: "golf", btnId: "#tabArcadeGolf", bannerId: "#arcadeGolfBtn", path: "golf/index.html" },
-  { id: "fighter", btnId: "#tabArcadeFighter", bannerId: "#arcadeFighterBtn", path: "fighter/index.html" },
-  { id: "stealth", btnId: "#tabArcadeStealth", bannerId: "#arcadeStealthBtn", path: "stealth/index.html" },
-  { id: "bomber", btnId: "#tabArcadeBomber", bannerId: "#arcadeBomberBtn", path: "bomber/index.html" },
-  { id: "pacman", btnId: "#tabArcadePacman", bannerId: "#arcadePacmanBtn", path: "pacman/index.html" },
-  { id: "tycoon", btnId: "#tabArcadeTycoon", bannerId: "#arcadeTycoonBtn", path: "tycoon/index.html" },
-  { id: "tetris", btnId: "#tabArcadeTetris", bannerId: "#arcadeTetrisBtn", path: "tetris/index.html" }
-];
+  // ── State ──
+  const queue = new Map();
+  let fileSequence = 0;
+  let activeFilter = 'all';
 
-function switchGame(url) {
-  const cleanUrl = url.split("?")[0];
-  const cacheBusted = cleanUrl + "?t=" + Date.now();
-  if (arcadeIframe) arcadeIframe.src = cacheBusted;
-  if (arcadeTabLink) arcadeTabLink.href = cleanUrl;
+  // ── Elements ──
+  const dropZone = $('#drop');
+  const fileInput = $('#fileInput');
+  const queueSection = $('#queueSection');
+  const fileQueueList = $('#fileQueueList');
+  const cleanAllBtn = $('#cleanAllBtn');
+  const downloadZipBtn = $('#downloadZipBtn');
+  const clearQueueBtn = $('#clearQueueBtn');
+  const cleanModeSelect = $('#cleanModeSelect');
+  const optAnonymize = $('#optAnonymize');
+  const optPreserveIcc = $('#optPreserveIcc');
 
-  const targetFolder = cleanUrl.split("/")[0];
-  arcadeGames.forEach(g => {
-    const tabEl = $(g.btnId);
-    if (tabEl) {
-      const match = g.path.startsWith(targetFolder);
-      tabEl.classList.toggle("active", match);
-      if (match && typeof tabEl.scrollIntoView === 'function') {
-        tabEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-      }
+  const batchProgressContainer = $('#batchProgressContainer');
+  const batchProgressBar = $('#batchProgressBar');
+  const progressStateText = $('#progressStateText');
+  const progressPercentText = $('#progressPercentText');
+
+  const verificationBanner = $('#verificationBanner');
+  const vBeforeCount = $('#vBeforeCount');
+  const vAfterCount = $('#vAfterCount');
+  const vSavingsBytes = $('#vSavingsBytes');
+
+  // ── Drag & Drop Events ──
+  ['dragenter', 'dragover'].forEach(evt => {
+    dropZone.addEventListener(evt, e => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+    });
+  });
+
+  dropZone.addEventListener('drop', e => {
+    if (e.dataTransfer && e.dataTransfer.files) {
+      handleFiles(Array.from(e.dataTransfer.files));
     }
   });
-}
 
-function openArcade(gameUrl = "game/index.html") {
-  if (!arcadeModal) return;
-  arcadeModal.classList.remove("hidden");
-  switchGame(gameUrl);
-  document.body.style.overflow = "hidden";
-}
+  fileInput.addEventListener('change', e => {
+    if (e.target.files) {
+      handleFiles(Array.from(e.target.files));
+      e.target.value = '';
+    }
+  });
 
-function closeArcade() {
-  if (!arcadeModal) return;
-  arcadeModal.classList.add("hidden");
-  if (arcadeIframe) {
-    arcadeIframe.src = "about:blank";
+  // Keyboard navigation on drop label
+  dropZone.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
+
+  // Global Clipboard Paste (Ctrl+V / Cmd+V)
+  window.addEventListener('paste', e => {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    const files = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].kind === 'file') {
+        const f = items[i].getAsFile();
+        if (f) files.push(f);
+      }
+    }
+    if (files.length > 0) {
+      handleFiles(files);
+    }
+  });
+
+  // ── Ingest Files ──
+  async function handleFiles(files) {
+    if (!files.length) return;
+    queueSection.classList.remove('hidden');
+
+    for (const file of files) {
+      const id = 'f_' + (++fileSequence);
+      const entry = {
+        id,
+        file,
+        format: 'unknown',
+        thumbUrl: null,
+        scan: null,
+        cleanResult: null,
+        status: 'scanning',
+        forensicsOpen: false
+      };
+      queue.set(id, entry);
+      renderCardSkeleton(entry);
+
+      // Perform deep forensic scan in background
+      try {
+        const scan = await window.MetaCleanEngine.scanFile(file);
+        entry.scan = scan;
+        entry.format = scan.format;
+        entry.status = 'ready';
+
+        // Thumbnail for images or covers
+        if (file.type.startsWith('image/') || scan.format === 'jpeg' || scan.format === 'png' || scan.format === 'webp') {
+          entry.thumbUrl = URL.createObjectURL(file);
+        }
+
+        updateCardUI(id);
+      } catch (err) {
+        console.error('Scan error:', err);
+        entry.status = 'error';
+        updateCardUI(id);
+      }
+    }
+
+    updateMetrics();
   }
-  document.body.style.overflow = "";
-}
 
-// Bind tabs and banner buttons
-arcadeGames.forEach(g => {
-  const tabBtn = $(g.btnId);
-  if (tabBtn) tabBtn.onclick = () => switchGame(g.path);
-
-  const bannerBtn = $(g.bannerId);
-  if (bannerBtn) bannerBtn.onclick = () => openArcade(g.path);
-});
-
-// Header Button
-const openBtn = $("#openArcadeBtn");
-if (openBtn) openBtn.onclick = () => openArcade("game/index.html");
-
-const closeBtn = $("#closeArcadeBtn");
-if (closeBtn) closeBtn.onclick = closeArcade;
-
-const backdrop = $("#arcadeBackdrop");
-if (backdrop) backdrop.onclick = closeArcade;
-
-window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && arcadeModal && !arcadeModal.classList.contains("hidden")) {
-    closeArcade();
+  // ── Card Rendering ──
+  function getFormatIcon(format) {
+    switch (format) {
+      case 'jpeg':
+      case 'png':
+      case 'webp':
+      case 'svg':
+        return '🖼️';
+      case 'mp3':
+      case 'flac':
+      case 'wav':
+        return '🎵';
+      case 'pdf':
+        return '📄';
+      case 'mp4':
+        return '🎥';
+      default:
+        return '📁';
+    }
   }
-});
+
+  function renderCardSkeleton(entry) {
+    const el = document.createElement('div');
+    el.className = 'file-card';
+    el.id = 'card_' + entry.id;
+    el.dataset.format = entry.format;
+
+    el.innerHTML = `
+      <div class="file-card-main">
+        <div class="file-thumb-box" id="thumb_${entry.id}">
+          <span class="file-thumb-icon">${getFormatIcon(entry.format)}</span>
+        </div>
+        <div class="file-info-col">
+          <div class="file-name-row">
+            <span class="file-title" id="title_${entry.id}" title="${window.MetaCleanEngine.esc(entry.file.name)}">${window.MetaCleanEngine.esc(entry.file.name)}</span>
+            <span class="format-tag" id="fmt_${entry.id}">Scanning</span>
+            <span class="threat-pill clean" id="threat_${entry.id}">Scanning…</span>
+          </div>
+          <div class="file-meta-sub">
+            <span class="size-stat" id="size_${entry.id}">${window.MetaCleanEngine.fmtSize(entry.file.size)}</span>
+            <span id="tagsCount_${entry.id}">Scanning metadata…</span>
+          </div>
+        </div>
+        <div class="file-actions-col">
+          <button class="btn btn-ghost btn-sm" id="btnInspect_${entry.id}" style="display:none;" onclick="toggleForensics('${entry.id}')">
+            🔍 Forensics
+          </button>
+          <button class="btn btn-primary btn-sm" id="btnClean_${entry.id}" disabled onclick="cleanSingle('${entry.id}')">
+            Clean
+          </button>
+          <button class="btn btn-success btn-sm" id="btnDownload_${entry.id}" style="display:none;" onclick="downloadSingle('${entry.id}')">
+            Download
+          </button>
+          <button class="btn-icon-del" onclick="removeFile('${entry.id}')" title="Remove from queue">✕</button>
+        </div>
+      </div>
+      <div class="forensics-drawer hidden" id="drawer_${entry.id}"></div>
+    `;
+
+    fileQueueList.prepend(el);
+  }
+
+  function updateCardUI(id) {
+    const entry = queue.get(id);
+    if (!entry) return;
+
+    const card = $('#card_' + id);
+    if (!card) return;
+
+    card.dataset.format = entry.format;
+
+    // Apply filter visibility
+    applyFilterToCard(card, entry.format);
+
+    // Threat level styling
+    const threatClass = `threat-${entry.scan?.threatLevel || 'clean'}`;
+    card.className = `file-card ${threatClass} ${entry.cleanResult ? 'cleaned' : ''}`;
+
+    // Thumbnail
+    const thumbBox = $('#thumb_' + id);
+    if (thumbBox) {
+      if (entry.thumbUrl) {
+        thumbBox.innerHTML = `<img src="${entry.thumbUrl}" class="file-thumb-img" alt="preview">`;
+      } else {
+        thumbBox.innerHTML = `<span class="file-thumb-icon">${getFormatIcon(entry.format)}</span>`;
+      }
+    }
+
+    // Format tag
+    const fmtTag = $('#fmt_' + id);
+    if (fmtTag) fmtTag.textContent = entry.format.toUpperCase();
+
+    // Threat Pill
+    const threatPill = $('#threat_' + id);
+    if (threatPill && entry.scan) {
+      threatPill.className = `threat-pill ${entry.scan.threatLevel}`;
+      switch (entry.scan.threatLevel) {
+        case 'critical':
+          threatPill.textContent = '🔴 CRITICAL: GPS Location';
+          break;
+        case 'high':
+          threatPill.textContent = '🟠 HIGH: Hardware / Owner ID';
+          break;
+        case 'med':
+          threatPill.textContent = '🟡 MEDIUM: Timestamps / Software';
+          break;
+        default:
+          threatPill.textContent = '🟢 SECURE: 0 Tracking Tags';
+          break;
+      }
+    }
+
+    // Metadata Tags Count
+    const tagsCount = $('#tagsCount_' + id);
+    if (tagsCount && entry.scan) {
+      const cnt = entry.scan.fields.length;
+      tagsCount.textContent = cnt ? `${cnt} embedded metadata field${cnt !== 1 ? 's' : ''}` : 'No common tracking tags';
+    }
+
+    // Size & Savings
+    const sizeStat = $('#size_' + id);
+    if (sizeStat) {
+      if (entry.cleanResult) {
+        const removed = entry.file.size - entry.cleanResult.cleanSize;
+        sizeStat.innerHTML = `${window.MetaCleanEngine.fmtSize(entry.cleanResult.cleanSize)} ${removed > 0 ? `<span class="savings-badge">(−${window.MetaCleanEngine.fmtSize(removed)})</span>` : ''}`;
+      } else {
+        sizeStat.textContent = window.MetaCleanEngine.fmtSize(entry.file.size);
+      }
+    }
+
+    // Buttons
+    const inspectBtn = $('#btnInspect_' + id);
+    if (inspectBtn && entry.scan && entry.scan.fields.length > 0) {
+      inspectBtn.style.display = 'inline-flex';
+      inspectBtn.textContent = `🔍 Forensics (${entry.scan.fields.length})`;
+    }
+
+    const cleanBtn = $('#btnClean_' + id);
+    if (cleanBtn) {
+      cleanBtn.disabled = entry.status === 'cleaning' || !!entry.cleanResult;
+      if (entry.cleanResult) {
+        cleanBtn.textContent = 'Stripped';
+        cleanBtn.style.display = 'none';
+      }
+    }
+
+    const downloadBtn = $('#btnDownload_' + id);
+    if (downloadBtn) {
+      downloadBtn.style.display = entry.cleanResult ? 'inline-flex' : 'none';
+    }
+
+    // Forensics Drawer
+    renderForensicsDrawer(id);
+  }
+
+  function renderForensicsDrawer(id) {
+    const entry = queue.get(id);
+    const drawer = $('#drawer_' + id);
+    if (!drawer || !entry || !entry.scan) return;
+
+    if (!entry.scan.fields.length) {
+      drawer.innerHTML = `<div style="color:var(--muted); font-size:12px; font-style:italic;">No embedded metadata detected — this file is already clean.</div>`;
+      return;
+    }
+
+    const itemsHtml = entry.scan.fields.map(f => `
+      <div class="forensic-item">
+        <span class="forensic-label">${window.MetaCleanEngine.esc(f.category)} • ${window.MetaCleanEngine.esc(f.label)}</span>
+        <span class="forensic-val ${f.threat === 'critical' ? 'highlight' : ''}">${window.MetaCleanEngine.esc(f.value)}</span>
+      </div>
+    `).join('');
+
+    let gpsHtml = '';
+    if (entry.scan.gps) {
+      const { lat, lon } = entry.scan.gps;
+      const osmUrl = `https://www.openstreetmap.org/?mlat=${lat.toFixed(6)}&mlon=${lon.toFixed(6)}#map=16/${lat.toFixed(6)}/${lon.toFixed(6)}`;
+      gpsHtml = `
+        <div style="margin-top:10px;">
+          <a href="${osmUrl}" target="_blank" rel="noopener noreferrer" class="gps-map-link">
+            <span>🗺️</span>
+            <span>View Coordinates on OpenStreetMap (${lat.toFixed(4)}°, ${lon.toFixed(4)}°) ↗</span>
+          </a>
+        </div>
+      `;
+    }
+
+    drawer.innerHTML = `
+      <div class="forensics-grid">${itemsHtml}</div>
+      ${gpsHtml}
+    `;
+  }
+
+  window.toggleForensics = function(id) {
+    const entry = queue.get(id);
+    const drawer = $('#drawer_' + id);
+    if (!entry || !drawer) return;
+    entry.forensicsOpen = !entry.forensicsOpen;
+    drawer.classList.toggle('hidden', !entry.forensicsOpen);
+  };
+
+  window.removeFile = function(id) {
+    const entry = queue.get(id);
+    if (entry && entry.thumbUrl) URL.revokeObjectURL(entry.thumbUrl);
+    queue.delete(id);
+    $('#card_' + id)?.remove();
+    updateMetrics();
+    if (queue.size === 0) {
+      queueSection.classList.add('hidden');
+      verificationBanner.classList.add('hidden');
+    }
+  };
+
+  // ── Cleaning Actions ──
+  window.cleanSingle = async function(id) {
+    const entry = queue.get(id);
+    if (!entry || entry.cleanResult) return;
+
+    entry.status = 'cleaning';
+    const cleanBtn = $('#btnClean_' + id);
+    if (cleanBtn) {
+      cleanBtn.disabled = true;
+      cleanBtn.textContent = 'Scrubbing…';
+    }
+
+    try {
+      const options = {
+        mode: cleanModeSelect.value,
+        preserveIcc: optPreserveIcc.checked,
+        anonymize: optAnonymize.checked
+      };
+
+      const result = await window.MetaCleanEngine.cleanFile(entry.file, options);
+      entry.cleanResult = result;
+      entry.status = 'cleaned';
+      updateCardUI(id);
+      updateMetrics();
+      showVerification();
+    } catch (err) {
+      console.error('Scrub failed:', err);
+      alert('Could not scrub metadata for this file.');
+      entry.status = 'error';
+      updateCardUI(id);
+    }
+  };
+
+  window.downloadSingle = function(id) {
+    const entry = queue.get(id);
+    if (!entry || !entry.cleanResult) return;
+
+    let filename = entry.file.name;
+    const ext = filename.includes('.') ? '.' + filename.split('.').pop() : '';
+    const base = filename.replace(/\.[^.]+$/, '');
+
+    if (optAnonymize.checked) {
+      const hash = Math.random().toString(16).slice(2, 8);
+      filename = `${entry.format || 'file'}_clean_${hash}${ext}`;
+    } else {
+      filename = `${base}_clean${ext}`;
+    }
+
+    triggerDownload(entry.cleanResult.cleanBlob, filename);
+  };
+
+  function triggerDownload(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  // Batch Clean All
+  cleanAllBtn.onclick = async () => {
+    const pending = Array.from(queue.values()).filter(e => !e.cleanResult);
+    if (!pending.length) return;
+
+    batchProgressContainer.classList.remove('hidden');
+    cleanAllBtn.disabled = true;
+
+    for (let i = 0; i < pending.length; i++) {
+      const e = pending[i];
+      const pct = Math.round(((i + 1) / pending.length) * 100);
+      progressStateText.textContent = `Scrubbing ${e.file.name} (${i + 1}/${pending.length})…`;
+      progressPercentText.textContent = pct + '%';
+      batchProgressBar.style.width = pct + '%';
+
+      await window.cleanSingle(e.id);
+    }
+
+    progressStateText.textContent = 'All files sanitized successfully!';
+    setTimeout(() => {
+      batchProgressContainer.classList.add('hidden');
+    }, 1800);
+
+    cleanAllBtn.disabled = false;
+    updateMetrics();
+  };
+
+  // Download All as ZIP
+  downloadZipBtn.onclick = async () => {
+    const ready = Array.from(queue.values()).filter(e => e.cleanResult);
+    if (!ready.length) return;
+
+    downloadZipBtn.disabled = true;
+    downloadZipBtn.innerHTML = '<span>⏳ Building ZIP…</span>';
+
+    try {
+      const filesForZip = ready.map(e => {
+        let name = e.file.name;
+        const ext = name.includes('.') ? '.' + name.split('.').pop() : '';
+        const base = name.replace(/\.[^.]+$/, '');
+
+        if (optAnonymize.checked) {
+          const hash = Math.random().toString(16).slice(2, 8);
+          name = `${e.format || 'file'}_clean_${hash}${ext}`;
+        } else {
+          name = `${base}_clean${ext}`;
+        }
+
+        return { name, data: e.cleanResult.cleanBlob };
+      });
+
+      const zipBlob = await window.createZip(filesForZip);
+      triggerDownload(zipBlob, 'metaclean_sanitized_files.zip');
+    } catch (err) {
+      console.error('ZIP generation failed:', err);
+      alert('Could not create ZIP archive.');
+    } finally {
+      downloadZipBtn.disabled = false;
+      downloadZipBtn.innerHTML = '<span>📦 Download All (.ZIP)</span>';
+    }
+  };
+
+  // Clear All Queue
+  clearQueueBtn.onclick = () => {
+    if (queue.size === 0) return;
+    queue.forEach(e => { if (e.thumbUrl) URL.revokeObjectURL(e.thumbUrl); });
+    queue.clear();
+    fileQueueList.innerHTML = '';
+    queueSection.classList.add('hidden');
+    verificationBanner.classList.add('hidden');
+    updateMetrics();
+  };
+
+  // ── Metrics & Verification ──
+  function updateMetrics() {
+    const total = queue.size;
+    const cleaned = Array.from(queue.values()).filter(e => e.cleanResult).length;
+    let totalTags = 0;
+
+    queue.forEach(e => {
+      if (e.scan) totalTags += e.scan.fields.length;
+    });
+
+    $('#statFiles').textContent = total;
+    $('#statTags').textContent = totalTags;
+    $('#statCleaned').textContent = cleaned;
+
+    downloadZipBtn.disabled = cleaned === 0;
+
+    // Filter tab counts
+    const images = Array.from(queue.values()).filter(e => ['jpeg','png','webp','svg'].includes(e.format)).length;
+    const audios = Array.from(queue.values()).filter(e => ['mp3','flac','wav'].includes(e.format)).length;
+    const pdfs = Array.from(queue.values()).filter(e => e.format === 'pdf').length;
+    const videos = Array.from(queue.values()).filter(e => e.format === 'mp4').length;
+
+    $('#tabCountAll').textContent = total;
+    $('#tabCountImage').textContent = images;
+    $('#tabCountAudio').textContent = audios;
+    $('#tabCountPdf').textContent = pdfs;
+    $('#tabCountVideo').textContent = videos;
+  }
+
+  function showVerification() {
+    const cleanedEntries = Array.from(queue.values()).filter(e => e.cleanResult);
+    if (!cleanedEntries.length) return;
+
+    let beforeTotal = 0;
+    let afterTotal = 0;
+    let bytesSaved = 0;
+
+    cleanedEntries.forEach(e => {
+      beforeTotal += e.cleanResult.beforeFields.length;
+      afterTotal += e.cleanResult.afterFields.length;
+      bytesSaved += Math.max(0, e.cleanResult.originalSize - e.cleanResult.cleanSize);
+    });
+
+    vBeforeCount.textContent = beforeTotal;
+    vAfterCount.textContent = afterTotal;
+    vSavingsBytes.textContent = window.MetaCleanEngine.fmtSize(bytesSaved);
+    verificationBanner.classList.remove('hidden');
+  }
+
+  // ── Queue Filter Tabs ──
+  $$('.queue-tab').forEach(tab => {
+    tab.onclick = () => {
+      $$('.queue-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeFilter = tab.dataset.filter;
+
+      $$('.file-card').forEach(card => {
+        applyFilterToCard(card, card.dataset.format);
+      });
+    };
+  });
+
+  function applyFilterToCard(card, format) {
+    if (activeFilter === 'all') {
+      card.style.display = '';
+    } else if (activeFilter === 'image') {
+      card.style.display = ['jpeg','png','webp','svg'].includes(format) ? '' : 'none';
+    } else if (activeFilter === 'audio') {
+      card.style.display = ['mp3','flac','wav'].includes(format) ? '' : 'none';
+    } else if (activeFilter === 'pdf') {
+      card.style.display = (format === 'pdf') ? '' : 'none';
+    } else if (activeFilter === 'video') {
+      card.style.display = (format === 'mp4') ? '' : 'none';
+    }
+  }
+
+  // ============================================================================
+  // Cyber Arcade Hub Launcher (29-Game Master Arcade Cabinet)
+  // ============================================================================
+  const arcadeModal = $("#arcadeModal");
+  const arcadeIframe = $("#arcadeIframe");
+  const arcadeTabLink = $("#arcadeTabLink");
+
+  const arcadeGames = [
+    { id: "turbo", btnId: "#tabArcadeTurbo", bannerId: "#arcadeBannerBtn", path: "game/index.html" },
+    { id: "puzzle", btnId: "#tabArcadePuzzle", bannerId: "#arcadePuzzleBtn", path: "puzzle/index.html" },
+    { id: "breaker", btnId: "#tabArcadeBreaker", bannerId: "#arcadeBreakerBtn", path: "breaker/index.html" },
+    { id: "strike", btnId: "#tabArcadeStrike", bannerId: "#arcadeStrikeBtn", path: "strike/index.html" },
+    { id: "snake", btnId: "#tabArcadeSnake", bannerId: "#arcadeSnakeBtn", path: "snake/index.html" },
+    { id: "jump", btnId: "#tabArcadeJump", bannerId: "#arcadeJumpBtn", path: "jump/index.html" },
+    { id: "pulse", btnId: "#tabArcadePulse", bannerId: "#arcadePulseBtn", path: "pulse/index.html" },
+    { id: "runner", btnId: "#tabArcadeRunner", bannerId: "#arcadeRunnerBtn", path: "runner/index.html" },
+    { id: "defense", btnId: "#tabArcadeDefense", bannerId: "#arcadeDefenseBtn", path: "defense/index.html" },
+    { id: "survivor", btnId: "#tabArcadeSurvivor", bannerId: "#arcadeSurvivorBtn", path: "survivor/index.html" },
+    { id: "portal", btnId: "#tabArcadePortal", bannerId: "#arcadePortalBtn", path: "portal/index.html" },
+    { id: "rogue", btnId: "#tabArcadeRogue", bannerId: "#arcadeRogueBtn", path: "rogue/index.html" },
+    { id: "tower", btnId: "#tabArcadeTower", bannerId: "#arcadeTowerBtn", path: "tower/index.html" },
+    { id: "kart", btnId: "#tabArcadeKart", bannerId: "#arcadeKartBtn", path: "kart/index.html" },
+    { id: "match", btnId: "#tabArcadeMatch", bannerId: "#arcadeMatchBtn", path: "match/index.html" },
+    { id: "pinball", btnId: "#tabArcadePinball", bannerId: "#arcadePinballBtn", path: "pinball/index.html" },
+    { id: "shinobi", btnId: "#tabArcadeShinobi", bannerId: "#arcadeShinobiBtn", path: "shinobi/index.html" },
+    { id: "deck", btnId: "#tabArcadeDeck", bannerId: "#arcadeDeckBtn", path: "deck/index.html" },
+    { id: "flight", btnId: "#tabArcadeFlight", bannerId: "#arcadeFlightBtn", path: "flight/index.html" },
+    { id: "billiards", btnId: "#tabArcadeBilliards", bannerId: "#arcadeBilliardsBtn", path: "billiards/index.html" },
+    { id: "tactics", btnId: "#tabArcadeTactics", bannerId: "#arcadeTacticsBtn", path: "tactics/index.html" },
+    { id: "mining", btnId: "#tabArcadeMining", bannerId: "#arcadeMiningBtn", path: "mining/index.html" },
+    { id: "golf", btnId: "#tabArcadeGolf", bannerId: "#arcadeGolfBtn", path: "golf/index.html" },
+    { id: "fighter", btnId: "#tabArcadeFighter", bannerId: "#arcadeFighterBtn", path: "fighter/index.html" },
+    { id: "stealth", btnId: "#tabArcadeStealth", bannerId: "#arcadeStealthBtn", path: "stealth/index.html" },
+    { id: "bomber", btnId: "#tabArcadeBomber", bannerId: "#arcadeBomberBtn", path: "bomber/index.html" },
+    { id: "pacman", btnId: "#tabArcadePacman", bannerId: "#arcadePacmanBtn", path: "pacman/index.html" },
+    { id: "tycoon", btnId: "#tabArcadeTycoon", bannerId: "#arcadeTycoonBtn", path: "tycoon/index.html" },
+    { id: "tetris", btnId: "#tabArcadeTetris", bannerId: "#arcadeTetrisBtn", path: "tetris/index.html" }
+  ];
+
+  function switchGame(url) {
+    const cleanUrl = url.split("?")[0];
+    const cacheBusted = cleanUrl + "?t=" + Date.now();
+    if (arcadeIframe) arcadeIframe.src = cacheBusted;
+    if (arcadeTabLink) arcadeTabLink.href = cleanUrl;
+
+    const targetFolder = cleanUrl.split("/")[0];
+    arcadeGames.forEach(g => {
+      const tabEl = $(g.btnId);
+      if (tabEl) {
+        const match = g.path.startsWith(targetFolder);
+        tabEl.classList.toggle("active", match);
+        if (match && typeof tabEl.scrollIntoView === 'function') {
+          tabEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        }
+      }
+    });
+  }
+
+  function openArcade(gameUrl = "game/index.html") {
+    if (!arcadeModal) return;
+    arcadeModal.classList.remove("hidden");
+    arcadeModal.setAttribute("aria-hidden", "false");
+    switchGame(gameUrl);
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeArcade() {
+    if (!arcadeModal) return;
+    arcadeModal.classList.add("hidden");
+    arcadeModal.setAttribute("aria-hidden", "true");
+    if (arcadeIframe) {
+      arcadeIframe.src = "about:blank";
+    }
+    document.body.style.overflow = "";
+  }
+
+  // Bind arcade tabs & banner launch buttons
+  arcadeGames.forEach(g => {
+    const tabBtn = $(g.btnId);
+    if (tabBtn) tabBtn.onclick = () => switchGame(g.path);
+
+    const bannerBtn = $(g.bannerId);
+    if (bannerBtn) bannerBtn.onclick = () => openArcade(g.path);
+  });
+
+  const openBtn = $("#openArcadeBtn");
+  if (openBtn) openBtn.onclick = () => openArcade("game/index.html");
+
+  const closeBtn = $("#closeArcadeBtn");
+  if (closeBtn) closeBtn.onclick = closeArcade;
+
+  const backdrop = $("#arcadeBackdrop");
+  if (backdrop) backdrop.onclick = closeArcade;
+
+  window.addEventListener("keydown", e => {
+    if (e.key === "Escape" && arcadeModal && !arcadeModal.classList.contains("hidden")) {
+      closeArcade();
+    }
+  });
+
+})();

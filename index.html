@@ -1,19 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MetaClean Pro — Private Image Cleaner</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MetaClean Pro v2.2 — Universal Privacy & Metadata Eliminator</title>
+<meta name="description" content="100% client-side privacy suite to inspect and strip EXIF, GPS coordinates, camera serials, author identities, ID3 audio tags, and PDF metadata with zero quality loss.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- Cyber Arcade Modal (19-Game Master Arcade Cabinet) -->
+
+<!-- Cyber Arcade Modal (29-Game Master Arcade Cabinet) -->
 <div id="arcadeModal" class="arcade-modal hidden" aria-hidden="true" role="dialog" aria-label="Cyber Arcade Master Cabinet">
   <div class="arcade-modal-backdrop" id="arcadeBackdrop"></div>
   <div class="arcade-modal-dialog">
     <div class="arcade-modal-header">
       <div class="arcade-modal-title">
-        <span class="arcade-tag">19-GAME ARCADE</span>
-        <div class="arcade-tab-bar">
+        <span class="arcade-tag">29-GAME ARCADE</span>
+        <div class="arcade-tab-bar" id="arcadeTabBar">
           <button class="arcade-tab-btn active" id="tabArcadeTurbo" data-src="game/index.html">🏎️ Turbo Drive</button>
           <button class="arcade-tab-btn" id="tabArcadePuzzle" data-src="puzzle/index.html">🧩 Cyber Circuit</button>
           <button class="arcade-tab-btn" id="tabArcadeBreaker" data-src="breaker/index.html">🧱 Neon Breaker</button>
@@ -56,96 +62,248 @@
   </div>
 </div>
 
-<header>
-  <a class="brand"><span>✦</span> MetaClean <i>PRO</i></a>
+<header class="site-header">
+  <div class="brand">
+    <span>✦</span>
+    <strong>MetaClean</strong>
+    <i class="version-tag">PRO v2.2</i>
+  </div>
   <div class="header-right">
-    <button id="openArcadeBtn" class="arcade-btn" title="Play Cyber Arcade Games">🎮 Cyber Arcade Hub (29 Games)</button>
-    <div class="privacy">🔒 Runs locally</div>
+    <div class="privacy-status" title="No files are ever uploaded">
+      <span class="live-dot"></span>
+      <span>100% Client-Side • Zero Uploads</span>
+    </div>
+    <button id="openArcadeBtn" class="arcade-btn" title="Play Cyber Arcade Games">
+      <span>🎮</span>
+      <span>Arcade Hub (29 Games)</span>
+    </button>
   </div>
 </header>
+
 <main>
-<section class="hero">
-<div class="eyebrow">PRIVACY-FIRST IMAGE CLEANER</div>
-<h1>Clean the metadata.<br><em>Keep the image.</em></h1>
-<p>Deep-scan common image metadata, rebuild a fresh file, then verify what remains — entirely in your browser.</p>
-<label class="drop" id="drop"><input id="file" type="file" accept="image/jpeg,image/png,image/webp">
-<div class="upload">↑</div><b>Drop an image here</b><span>or <u>choose a file</u></span><small>JPEG • PNG • WebP</small></label>
-<div class="local">Your file is processed on this device. It is not uploaded to a server.</div>
-</section>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="eyebrow">UNIVERSAL CLIENT-SIDE PRIVACY ENGINE</div>
+    <h1>Erase Hidden Metadata.<br><em>Keep 100% Quality.</em></h1>
+    <p>
+      Inspect and strip exact GPS coordinates, camera serial numbers, capture timestamps, author identities, and tracking payloads from <strong>Images, Audio, PDFs, and Videos</strong> — right inside your browser with bit-exact lossless preservation.
+    </p>
 
-<section id="app" class="hidden">
-<div class="filebar"><img id="thumb"><div><b id="fname"></b><small id="finfo"></small></div><button id="reset">Remove</button></div>
-<div class="toolbar"><div><b>Deep scan</b><span id="scanState">Scanning…</span></div><div class="meter"><i id="meter"></i></div></div>
-
-<div class="columns">
-<section class="card">
-<div class="head"><div><h2>Metadata detected</h2><p>Common embedded information found before cleaning.</p></div><strong id="count">0</strong></div>
-<div id="before" class="list"><div class="empty">Scanning file…</div></div>
-</section>
-<section class="card clean">
-<div class="shield">✓</div><h2>Clean & verify</h2>
-<p>Creates a new raster image without common EXIF, XMP, IPTC and application metadata.</p>
-<button id="clean">Clean image</button>
-<small>Original file is never modified.</small>
-</section>
-</div>
-
-<section id="result" class="card result hidden">
-<div class="head"><div><h2>Verification</h2><p>We scan the generated file again after cleaning.</p></div><span id="resultBadge"></span></div>
-<div class="verify"><div><b id="removed">—</b><span>detected before</span></div><div class="arrow">→</div><div><b id="remaining">—</b><span>detected after</span></div></div>
-<div id="after" class="list"></div>
-<div class="actions"><button id="download" class="primary">Download cleaned image</button><button id="again">Clean another</button></div>
-</section>
-</section>
-
-<section class="how"><h2>What it removes</h2><div class="features">
-<div><b>EXIF</b><span>Camera, lens, dates and other EXIF fields.</span></div>
-<div><b>LOCATION</b><span>GPS coordinates and location fields.</span></div>
-<div><b>XMP / IPTC</b><span>Common editing, author and publishing metadata.</span></div>
-<div><b>APP DATA</b><span>Common JPEG application segments and PNG text metadata.</span></div>
-</div><p class="limit">No browser tool can guarantee removal of every proprietary or steganographic payload. Pixel content is not altered to evade AI detection or provenance systems.</p></section>
-
-<section class="arcade-banner-section">
-  <div class="arcade-banner-card">
-    <div class="arcade-banner-content">
-      <span class="arcade-banner-tag">BUILT-IN RETRO ARCADE CABINET — 29 HIGH-OCTANE GAMES</span>
-      <h2>Take a breather with our 29-Game Cyber Arcade Cabinet!</h2>
-      <p>Enjoy twenty-nine studio-grade browser games with rich gameplay depth, roguelike loops, bullet deflection, Mode-7 pseudo-3D curves, tactical deckbuilding, and Web Audio synthesizers: from high-octane <strong>Turbo Drive</strong> & <strong>Cyber Drift</strong>, to mind-bending <strong>Quantum Portal</strong> & <strong>Cyber Circuit</strong>, roguelike dungeon crawling in <strong>Neon Rogue</strong> & <strong>Cyber Survivor</strong>, tactical tower defense in <strong>Matrix Defense</strong>, deep deck duels in <strong>Cyber Deck</strong>, action slashing in <strong>Neon Shinobi</strong>, match-3 RPG spellcasting in <strong>Neon Alchemist</strong>, authentic physics in <strong>Quantum Pinball</strong>, and 2.5D flight dogfights in <strong>Aero Striker</strong>.</p>
-      <div class="arcade-banner-btns">
-        <button id="arcadeBannerBtn" class="primary-arcade-btn">🏎️ Turbo Drive</button>
-        <button id="arcadePuzzleBtn" class="primary-arcade-btn puzzle-btn">🧩 Cyber Circuit</button>
-        <button id="arcadeBreakerBtn" class="primary-arcade-btn breaker-btn">🧱 Neon Breaker</button>
-        <button id="arcadeStrikeBtn" class="primary-arcade-btn strike-btn">🚀 Cyber Strike</button>
-        <button id="arcadeSnakeBtn" class="primary-arcade-btn snake-btn">🐍 Neon Snake</button>
-        <button id="arcadeJumpBtn" class="primary-arcade-btn jump-btn">🦘 Quantum Jump</button>
-        <button id="arcadePulseBtn" class="primary-arcade-btn pulse-btn">🎵 Cyber Pulse</button>
-        <button id="arcadeRunnerBtn" class="primary-arcade-btn runner-btn">⚡ Gravity Runner</button>
-        <button id="arcadeDefenseBtn" class="primary-arcade-btn defense-btn">🛡️ Neon Defense</button>
-        <button id="arcadeSurvivorBtn" class="primary-arcade-btn survivor-btn">🧬 Cyber Survivor</button>
-        <button id="arcadePortalBtn" class="primary-arcade-btn portal-btn">🌀 Quantum Portal</button>
-        <button id="arcadeRogueBtn" class="primary-arcade-btn rogue-btn">🗡️ Neon Rogue</button>
-        <button id="arcadeTowerBtn" class="primary-arcade-btn tower-btn">🏰 Matrix Defense</button>
-        <button id="arcadeKartBtn" class="primary-arcade-btn kart-btn">🏎️ Cyber Drift</button>
-        <button id="arcadeMatchBtn" class="primary-arcade-btn match-btn">✨ Neon Alchemist</button>
-        <button id="arcadePinballBtn" class="primary-arcade-btn pinball-btn">⚡ Quantum Pinball</button>
-        <button id="arcadeShinobiBtn" class="primary-arcade-btn shinobi-btn">⚔️ Neon Shinobi</button>
-        <button id="arcadeDeckBtn" class="primary-arcade-btn deck-btn">🃏 Cyber Deck</button>
-        <button id="arcadeFlightBtn" class="primary-arcade-btn flight-btn">✈️ Aero Striker</button>
-        <button id="arcadeBilliardsBtn" class="primary-arcade-btn billiards-btn">🎱 Neon Pool</button>
-        <button id="arcadeTacticsBtn" class="primary-arcade-btn tactics-btn">🤖 Mech Warfare</button>
-        <button id="arcadeMiningBtn" class="primary-arcade-btn mining-btn">⛏️ Deep Core</button>
-        <button id="arcadeGolfBtn" class="primary-arcade-btn golf-btn">⛳ Quantum Golf</button>
-        <button id="arcadeFighterBtn" class="primary-arcade-btn fighter-btn">🥊 Cyber Brawler</button>
-        <button id="arcadeStealthBtn" class="primary-arcade-btn stealth-btn">🕵️ Ghost Protocol</button>
-        <button id="arcadeBomberBtn" class="primary-arcade-btn bomber-btn">💣 Grid Detonator</button>
-        <button id="arcadePacmanBtn" class="primary-arcade-btn pacman-btn">👾 Quantum Maze</button>
-        <button id="arcadeTycoonBtn" class="primary-arcade-btn tycoon-btn">⚡ City Tycoon</button>
-        <button id="arcadeTetrisBtn" class="primary-arcade-btn tetris-btn">🧱 Quantum Fall</button>
+    <!-- Multi-File Dropzone -->
+    <div class="drop-container">
+      <label class="drop" id="drop" tabindex="0" role="button" aria-label="Drop files here or click to browse">
+        <input id="fileInput" type="file" multiple accept="image/jpeg,image/png,image/webp,image/svg+xml,audio/mpeg,audio/flac,audio/wav,application/pdf,video/mp4,video/quicktime,.jpg,.jpeg,.png,.webp,.svg,.mp3,.flac,.wav,.pdf,.mp4,.mov">
+        <div class="upload-icon-box">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <b>Drop files here or click to browse</b>
+        <span>Images, Audio, Documents, & Videos</span>
+        <div class="format-chips">
+          <span class="chip">JPEG</span>
+          <span class="chip">PNG</span>
+          <span class="chip">WEBP</span>
+          <span class="chip">SVG</span>
+          <span class="chip">MP3</span>
+          <span class="chip">FLAC</span>
+          <span class="chip">WAV</span>
+          <span class="chip">PDF</span>
+          <span class="chip">MP4 / MOV</span>
+        </div>
+        <div class="paste-hint">
+          <kbd>Ctrl</kbd> + <kbd>V</kbd> (or <kbd>⌘</kbd>+<kbd>V</kbd>) anywhere to paste clipboard screenshots
+        </div>
+      </label>
+      <div class="local-guarantee">
+        🛡️ Processing occurs strictly in local WebAssembly/JS memory. Files never leave this machine.
       </div>
     </div>
-  </div>
-</section>
+  </section>
+
+  <!-- Interactive Queue & Dashboard (Appears when files are added) -->
+  <section id="queueSection" class="queue-section hidden">
+    <!-- Queue Header & Filter Tabs -->
+    <div class="queue-header">
+      <div class="queue-tabs">
+        <button class="queue-tab active" data-filter="all">All Files (<span id="tabCountAll">0</span>)</button>
+        <button class="queue-tab" data-filter="image">Images (<span id="tabCountImage">0</span>)</button>
+        <button class="queue-tab" data-filter="audio">Audio (<span id="tabCountAudio">0</span>)</button>
+        <button class="queue-tab" data-filter="pdf">PDF (<span id="tabCountPdf">0</span>)</button>
+        <button class="queue-tab" data-filter="video">Video (<span id="tabCountVideo">0</span>)</button>
+      </div>
+      <div class="queue-quick-stats">
+        <span class="stat-pill"><strong id="statFiles">0</strong> Files</span>
+        <span class="stat-pill warning"><strong id="statTags">0</strong> Metadata Tags</span>
+        <span class="stat-pill success"><strong id="statCleaned">0</strong> Cleaned</span>
+      </div>
+    </div>
+
+    <!-- Batch Control Panel -->
+    <div class="batch-panel">
+      <div class="options-group">
+        <div class="option-item">
+          <label for="cleanModeSelect">Scrubbing Mode:</label>
+          <select id="cleanModeSelect" class="cyber-select">
+            <option value="lossless" selected>⚡ Lossless Binary Scrub (100% Quality & Instant)</option>
+            <option value="raster">🛡️ Deep Raster Re-render (Anti-Steganography / Visual Only)</option>
+          </select>
+        </div>
+        <div class="option-checkboxes">
+          <label class="cyber-checkbox" title="Replaces original filenames like IMG_20240929_1423.jpg to prevent timestamp leaks">
+            <input type="checkbox" id="optAnonymize">
+            <span>Anonymize Filenames</span>
+          </label>
+          <label class="cyber-checkbox" title="Keeps ICC display color profiles for photographers while stripping all EXIF/GPS">
+            <input type="checkbox" id="optPreserveIcc">
+            <span>Preserve ICC Color Profile</span>
+          </label>
+        </div>
+      </div>
+      <div class="batch-actions">
+        <button id="cleanAllBtn" class="btn btn-primary">
+          <span>⚡ Clean All Files</span>
+        </button>
+        <button id="downloadZipBtn" class="btn btn-accent" disabled>
+          <span>📦 Download All (.ZIP)</span>
+        </button>
+        <button id="clearQueueBtn" class="btn btn-ghost" title="Clear all queued files">
+          <span>Clear All</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Global Progress Bar -->
+    <div id="batchProgressContainer" class="progress-bar-wrap hidden">
+      <div class="progress-info">
+        <span id="progressStateText">Processing queue…</span>
+        <span id="progressPercentText">0%</span>
+      </div>
+      <div class="progress-bar-track">
+        <div id="batchProgressBar" class="progress-bar-fill"></div>
+      </div>
+    </div>
+
+    <!-- Queue Items Container -->
+    <div id="fileQueueList" class="file-queue-list"></div>
+  </section>
+
+  <!-- Side-by-Side Audit / Verification Banner -->
+  <section id="verificationBanner" class="verification-card hidden">
+    <div class="verify-badge-row">
+      <div class="shield-icon">✓</div>
+      <div>
+        <h3>Universal Clean & Verification Complete</h3>
+        <p>Output files re-scanned. Zero tracking markers, GPS coordinates, or device signatures remain.</p>
+      </div>
+    </div>
+    <div class="verify-stats">
+      <div class="v-box">
+        <span class="v-num" id="vBeforeCount">0</span>
+        <span class="v-lbl">Tags Detected Before</span>
+      </div>
+      <div class="v-arrow">→</div>
+      <div class="v-box success">
+        <span class="v-num" id="vAfterCount">0</span>
+        <span class="v-lbl">Tags Remaining After</span>
+      </div>
+      <div class="v-box">
+        <span class="v-num" id="vSavingsBytes">0 KB</span>
+        <span class="v-lbl">Metadata Removed</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Explainer Feature Grid -->
+  <section class="how">
+    <h2>Enterprise-Grade Privacy Scrubbing</h2>
+    <p class="section-sub">Understand what lives inside your media and how MetaClean Pro strips it without re-compressing your files.</p>
+    <div class="features">
+      <div class="feat-card">
+        <div class="feat-icon">📍</div>
+        <b>EXIF & Physical GPS</b>
+        <span>Modern phones embed precise latitude, longitude, altitude, camera serials, lens specs, and shutter timestamps into every shot.</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🎵</div>
+        <b>Audio ID3 & Album Art</b>
+        <span>MP3 and FLAC files harbor distributor tags, buyer IDs, embedded cover graphics, and private encoder comments.</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📄</div>
+        <b>PDF & Document History</b>
+        <span>PDFs retain original creator usernames, operating system paths, software suites, and revision history timestamps.</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🎥</div>
+        <b>Video Locations & User Data</b>
+        <span>MP4 and QuickTime files record recording time in <code>mvhd</code> headers and GPS coordinates in <code>udta</code> user atoms.</span>
+      </div>
+    </div>
+    <p class="limit">
+      100% Client-Side Engine: MetaClean Pro executes locally in WebAssembly/JS. Pixel content is not altered to evade AI detection or copyright systems.
+    </p>
+  </section>
+
+  <!-- Arcade Banner Section (29 Games) -->
+  <section class="arcade-banner-section">
+    <div class="arcade-banner-card">
+      <div class="arcade-banner-content">
+        <span class="arcade-banner-tag">BUILT-IN RETRO ARCADE CABINET — 29 HIGH-OCTANE GAMES</span>
+        <h2>Take a breather with our 29-Game Cyber Arcade Cabinet!</h2>
+        <p>Enjoy twenty-nine studio-grade browser games with rich gameplay depth, roguelike loops, bullet deflection, Mode-7 pseudo-3D curves, tactical deckbuilding, and Web Audio synthesizers: from high-octane <strong>Turbo Drive</strong> & <strong>Cyber Drift</strong>, to mind-bending <strong>Quantum Portal</strong> & <strong>Cyber Circuit</strong>, roguelike dungeon crawling in <strong>Neon Rogue</strong> & <strong>Cyber Survivor</strong>, tactical tower defense in <strong>Matrix Defense</strong>, deep deck duels in <strong>Cyber Deck</strong>, action slashing in <strong>Neon Shinobi</strong>, match-3 RPG spellcasting in <strong>Neon Alchemist</strong>, authentic physics in <strong>Quantum Pinball</strong>, and 2.5D flight dogfights in <strong>Aero Striker</strong>.</p>
+        <div class="arcade-banner-btns">
+          <button id="arcadeBannerBtn" class="primary-arcade-btn">🏎️ Turbo Drive</button>
+          <button id="arcadePuzzleBtn" class="primary-arcade-btn puzzle-btn">🧩 Cyber Circuit</button>
+          <button id="arcadeBreakerBtn" class="primary-arcade-btn breaker-btn">🧱 Neon Breaker</button>
+          <button id="arcadeStrikeBtn" class="primary-arcade-btn strike-btn">🚀 Cyber Strike</button>
+          <button id="arcadeSnakeBtn" class="primary-arcade-btn snake-btn">🐍 Neon Snake</button>
+          <button id="arcadeJumpBtn" class="primary-arcade-btn jump-btn">🦘 Quantum Jump</button>
+          <button id="arcadePulseBtn" class="primary-arcade-btn pulse-btn">🎵 Cyber Pulse</button>
+          <button id="arcadeRunnerBtn" class="primary-arcade-btn runner-btn">⚡ Gravity Runner</button>
+          <button id="arcadeDefenseBtn" class="primary-arcade-btn defense-btn">🛡️ Neon Defense</button>
+          <button id="arcadeSurvivorBtn" class="primary-arcade-btn survivor-btn">🧬 Cyber Survivor</button>
+          <button id="arcadePortalBtn" class="primary-arcade-btn portal-btn">🌀 Quantum Portal</button>
+          <button id="arcadeRogueBtn" class="primary-arcade-btn rogue-btn">🗡️ Neon Rogue</button>
+          <button id="arcadeTowerBtn" class="primary-arcade-btn tower-btn">🏰 Matrix Defense</button>
+          <button id="arcadeKartBtn" class="primary-arcade-btn kart-btn">🏎️ Cyber Drift</button>
+          <button id="arcadeMatchBtn" class="primary-arcade-btn match-btn">✨ Neon Alchemist</button>
+          <button id="arcadePinballBtn" class="primary-arcade-btn pinball-btn">⚡ Quantum Pinball</button>
+          <button id="arcadeShinobiBtn" class="primary-arcade-btn shinobi-btn">⚔️ Neon Shinobi</button>
+          <button id="arcadeDeckBtn" class="primary-arcade-btn deck-btn">🃏 Cyber Deck</button>
+          <button id="arcadeFlightBtn" class="primary-arcade-btn flight-btn">✈️ Aero Striker</button>
+          <button id="arcadeBilliardsBtn" class="primary-arcade-btn billiards-btn">🎱 Neon Pool</button>
+          <button id="arcadeTacticsBtn" class="primary-arcade-btn tactics-btn">🤖 Mech Warfare</button>
+          <button id="arcadeMiningBtn" class="primary-arcade-btn mining-btn">⛏️ Deep Core</button>
+          <button id="arcadeGolfBtn" class="primary-arcade-btn golf-btn">⛳ Quantum Golf</button>
+          <button id="arcadeFighterBtn" class="primary-arcade-btn fighter-btn">🥊 Cyber Brawler</button>
+          <button id="arcadeStealthBtn" class="primary-arcade-btn stealth-btn">🕵️ Ghost Protocol</button>
+          <button id="arcadeBomberBtn" class="primary-arcade-btn bomber-btn">💣 Grid Detonator</button>
+          <button id="arcadePacmanBtn" class="primary-arcade-btn pacman-btn">👾 Quantum Maze</button>
+          <button id="arcadeTycoonBtn" class="primary-arcade-btn tycoon-btn">⚡ City Tycoon</button>
+          <button id="arcadeTetrisBtn" class="primary-arcade-btn tetris-btn">🧱 Quantum Fall</button>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
-<footer>MetaClean Pro <span>Client-side processing • No uploads</span></footer>
+
+<footer class="site-footer">
+  <div class="footer-wrap">
+    <div><strong>MetaClean Pro v2.2</strong> <span>• Zero Network Transmission • 100% Local Privacy</span></div>
+    <div class="footer-links">
+      <a href="https://github.com/cold4u/MetaClean-Pro-v2" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
+      <span>•</span>
+      <a href="javascript:void(0)" onclick="window.scrollTo({top:0,behavior:'smooth'})">Back to Top ↑</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Core Engines & App Controller -->
+<script src="zip.js"></script>
+<script src="engine.js"></script>
 <script src="app.js"></script>
-</body></html>
+</body>
+</html>
