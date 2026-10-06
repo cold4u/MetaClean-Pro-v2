@@ -2762,27 +2762,59 @@
     });
   }
 
-  // Autoplay handler: Attempt immediate play; if browser blocks without gesture, start upon first interaction
+  // Default Autoplay Engine:
+  // Starts playing "All the Stars" by default as soon as anyone enters the website.
   function initAutoplay() {
-    if (userExplicitPaused || !bgMusicAudio) return;
-    bgMusicAudio.play().then(() => {
-      updateMusicUI(true);
-    }).catch(() => {
-      const handleFirstInteraction = () => {
-        if (!userExplicitPaused && !isMusicPlaying) {
-          playMusic();
-        }
-        window.removeEventListener('click', handleFirstInteraction);
-        window.removeEventListener('keydown', handleFirstInteraction);
-        window.removeEventListener('touchstart', handleFirstInteraction);
-      };
-      window.addEventListener('click', handleFirstInteraction, { once: true, passive: true });
-      window.addEventListener('keydown', handleFirstInteraction, { once: true, passive: true });
-      window.addEventListener('touchstart', handleFirstInteraction, { once: true, passive: true });
-    });
+    if (!bgMusicAudio) return;
+    userExplicitPaused = false;
+    bgMusicAudio.loop = isMusicLooping;
+    bgMusicAudio.volume = parseFloat(musicVolumeSlider ? musicVolumeSlider.value : prevVolume);
+
+    // 1. Immediate unmuted play attempt
+    const promise = bgMusicAudio.play();
+    if (promise !== undefined) {
+      promise.then(() => {
+        updateMusicUI(true);
+      }).catch(() => {
+        // 2. If browser autoplay policy defers unmuted audio without gesture,
+        // start playback immediately in muted mode so the audio stream & timeline run
+        bgMusicAudio.muted = true;
+        bgMusicAudio.play().then(() => {
+          updateMusicUI(true);
+        }).catch(() => {});
+
+        // 3. The moment ANY user interaction occurs (click, tap, key, scroll, movement),
+        // immediately unmute and restore volume with zero friction
+        const triggerSound = () => {
+          bgMusicAudio.muted = false;
+          bgMusicAudio.volume = parseFloat(musicVolumeSlider ? musicVolumeSlider.value : prevVolume);
+          if (bgMusicAudio.paused) {
+            bgMusicAudio.play().catch(() => {});
+          }
+          updateMusicUI(true);
+          const events = ['pointerdown', 'mousedown', 'mouseup', 'touchstart', 'touchend', 'click', 'keydown', 'wheel', 'scroll'];
+          events.forEach(evt => {
+            window.removeEventListener(evt, triggerSound, { capture: true });
+            document.removeEventListener(evt, triggerSound, { capture: true });
+          });
+        };
+
+        const events = ['pointerdown', 'mousedown', 'mouseup', 'touchstart', 'touchend', 'click', 'keydown', 'wheel', 'scroll'];
+        events.forEach(evt => {
+          window.addEventListener(evt, triggerSound, { capture: true, once: true });
+          document.addEventListener(evt, triggerSound, { capture: true, once: true });
+        });
+      });
+    }
   }
 
+  // Trigger on script execution and on window load
   initAutoplay();
+  window.addEventListener('load', () => {
+    if (bgMusicAudio && bgMusicAudio.paused && !userExplicitPaused) {
+      initAutoplay();
+    }
+  });
   updateLoopButtonUI();
 
   // Global methods
