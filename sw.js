@@ -1,7 +1,7 @@
 /**
- * MetaClean Pro v2.7 — Offline Service Worker
+ * MetaClean Pro v2.8 — Offline Service Worker
  */
-const CACHE_NAME = 'metaclean-pro-v2.7';
+const CACHE_NAME = 'metaclean-pro-v2.8';
 const ASSETS = [
   './',
   './index.html',
@@ -9,7 +9,8 @@ const ASSETS = [
   './app.js',
   './engine.js',
   './zip.js',
-  './manifest.json'
+  './manifest.json',
+  './audio/all-the-stars.ogg'
 ];
 
 self.addEventListener('install', event => {

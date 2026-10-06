@@ -2467,6 +2467,350 @@ main {
   box-shadow: 0 6px 20px rgba(0, 240, 255, 0.3);
 }
 
+/* ============================================================================
+   All the Stars — Cyber Ambient Audio Player & Header Controls
+   ============================================================================ */
+
+/* ── Header Music Button ── */
+.header-music-btn {
+  background: rgba(121, 82, 255, 0.12);
+  border: 1px solid rgba(121, 82, 255, 0.38);
+  color: #c084fc;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 7px 13px;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+.header-music-btn:hover {
+  background: rgba(121, 82, 255, 0.22);
+  border-color: #a855f7;
+  color: #fff;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.35);
+  transform: translateY(-1px);
+}
+.header-music-btn.playing {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: #00f0ff;
+  color: #00f0ff;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.32);
+}
+
+/* 3-bar animated equalizer in header */
+.music-eq-icon {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 13px;
+}
+.music-eq-icon .bar {
+  width: 2.5px;
+  background: currentColor;
+  border-radius: 2px;
+  height: 3px;
+  transition: height 0.12s ease;
+}
+.header-music-btn.playing .music-eq-icon .bar-1 {
+  animation: eqBounce 0.55s infinite ease-in-out alternate;
+}
+.header-music-btn.playing .music-eq-icon .bar-2 {
+  animation: eqBounce 0.42s infinite ease-in-out 0.12s alternate;
+}
+.header-music-btn.playing .music-eq-icon .bar-3 {
+  animation: eqBounce 0.62s infinite ease-in-out 0.25s alternate;
+}
+@keyframes eqBounce {
+  0% { height: 2px; }
+  100% { height: 13px; }
+}
+
+/* ── Floating Cyber Music Dock ── */
+.cyber-music-dock {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  background: linear-gradient(135deg, rgba(16, 18, 30, 0.94) 0%, rgba(9, 10, 18, 0.98) 100%);
+  border: 1px solid rgba(121, 82, 255, 0.38);
+  border-radius: 18px;
+  padding: 13px 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.72), 0 0 25px rgba(121, 82, 255, 0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 370px;
+  max-width: calc(100vw - 32px);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, border-color 0.2s ease, box-shadow 0.2s ease, width 0.3s ease, padding 0.3s ease;
+}
+.cyber-music-dock:hover {
+  border-color: rgba(0, 240, 255, 0.5);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.75), 0 0 30px rgba(0, 240, 255, 0.25);
+}
+
+/* Minimized Floating State */
+.cyber-music-dock.minimized {
+  width: auto;
+  padding: 7px 10px;
+  border-radius: 30px;
+  gap: 8px;
+  background: rgba(14, 16, 26, 0.94);
+}
+.cyber-music-dock.minimized .music-body-wrap {
+  display: none;
+}
+.cyber-music-dock.minimized .music-disc-wrap {
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+}
+
+/* Vinyl Disc & Center Glow */
+.music-disc-wrap {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: width 0.25s ease, height 0.25s ease;
+}
+.music-vinyl-disc {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #2a2250 15%, #131422 65%, #05060b 100%);
+  border: 2px solid #4a3b78;
+  box-shadow: 0 0 12px rgba(121, 82, 255, 0.3);
+  position: relative;
+  display: grid;
+  place-items: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.cyber-music-dock.playing .music-vinyl-disc {
+  animation: spinVinyl 4s linear infinite;
+  border-color: #00f0ff;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.45);
+}
+@keyframes spinVinyl {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.disc-center {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00f0ff, #ec4899);
+  color: #05060b;
+  font-size: 9px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.5);
+}
+
+/* Mini Visualizer on top of disc */
+.music-eq-mini {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  background: rgba(10, 11, 20, 0.88);
+  padding: 2px 4px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+}
+.music-eq-mini .bar {
+  width: 2px;
+  height: 3px;
+  background: #00f0ff;
+  border-radius: 1px;
+}
+.cyber-music-dock.playing .music-eq-mini .b1 { animation: eqBounce 0.45s infinite alternate; }
+.cyber-music-dock.playing .music-eq-mini .b2 { animation: eqBounce 0.65s infinite alternate 0.1s; }
+.cyber-music-dock.playing .music-eq-mini .b3 { animation: eqBounce 0.4s infinite alternate 0.2s; }
+.cyber-music-dock.playing .music-eq-mini .b4 { animation: eqBounce 0.55s infinite alternate 0.15s; }
+
+/* Body Content */
+.music-body-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.music-meta-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.music-text-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.music-track-title {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+}
+.music-artist-name {
+  color: #94a3b8;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.music-meta-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.music-loop-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #34d399;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: all 0.15s ease;
+}
+.music-loop-badge:hover {
+  background: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+.music-loop-badge.inactive {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #64748b;
+}
+.music-dock-min-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+.music-dock-min-btn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Timeline / Seek Bar */
+.music-timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.music-time-tag {
+  font-size: 9.5px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #64748b;
+  min-width: 26px;
+}
+.music-progress-bar-wrap {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+.music-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #7952ff 0%, #00f0ff 100%);
+  border-radius: 3px;
+  transition: width 0.1s linear;
+}
+
+/* Controls & Volume */
+.music-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.music-btn-group, .music-volume-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-music-ctrl {
+  background: #1e2235;
+  border: 1px solid #323952;
+  color: #f1f2f6;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  padding: 4px 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-music-ctrl.play-btn {
+  background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%);
+  color: #050a14;
+  border: none;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(0, 240, 255, 0.3);
+}
+.btn-music-ctrl.play-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+.btn-music-ctrl.icon-btn {
+  padding: 4px 7px;
+  font-size: 11px;
+}
+.btn-music-ctrl:hover {
+  background: #2b324d;
+  color: #fff;
+}
+.music-vol-slider {
+  width: 60px;
+  accent-color: #00f0ff;
+  height: 4px;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .cyber-music-dock {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+}
+
 
 
 

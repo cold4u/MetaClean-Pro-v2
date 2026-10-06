@@ -74,12 +74,20 @@
   <div class="brand">
     <span>✦</span>
     <strong>MetaClean</strong>
-    <i class="version-tag">PRO v2.7</i>
+    <i class="version-tag">PRO v2.8</i>
   </div>
   <div class="header-right">
     <button id="installAppBtn" class="pwa-install-btn hidden" title="Install MetaClean Pro as Desktop/Mobile App">
       <span>📥</span>
       <span>Install App</span>
+    </button>
+    <button id="headerMusicBtn" class="header-music-btn" title="Toggle 'All the Stars' Background Music (Loop Active)">
+      <span class="music-eq-icon">
+        <span class="bar bar-1"></span>
+        <span class="bar bar-2"></span>
+        <span class="bar bar-3"></span>
+      </span>
+      <span id="headerMusicLabel" class="music-btn-label">🎵 All the Stars</span>
     </button>
     <div class="privacy-status" title="No files are ever uploaded">
       <span class="live-dot"></span>
@@ -404,7 +412,7 @@
 
 <footer class="site-footer">
   <div class="footer-wrap">
-    <div><strong>MetaClean Pro v2.7</strong> <span>• Zero Network Transmission • 100% Local Privacy</span></div>
+    <div><strong>MetaClean Pro v2.8</strong> <span>• Zero Network Transmission • 100% Local Privacy</span></div>
     <div class="footer-links">
       <a href="https://github.com/cold4u/MetaClean-Pro-v2" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
       <span>•</span>
@@ -412,6 +420,72 @@
     </div>
   </div>
 </footer>
+
+<!-- Background Audio Loop Engine (All the Stars — Kendrick Lamar & SZA) -->
+<audio id="bgMusicAudio" loop preload="auto">
+  <source src="audio/all-the-stars.ogg" type="audio/ogg">
+  <source src="audio/all-the-stars.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Floating Cyber Ambient Music Dock -->
+<div id="cyberMusicDock" class="cyber-music-dock" role="region" aria-label="Audio Player: All the Stars">
+  <div class="music-disc-wrap" id="musicDiscWrap" title="Click to Play / Pause All the Stars">
+    <div class="music-vinyl-disc" id="musicVinylDisc">
+      <div class="disc-grooves"></div>
+      <div class="disc-center">✦</div>
+    </div>
+    <div class="music-eq-mini" id="musicEqMini">
+      <span class="bar b1"></span>
+      <span class="bar b2"></span>
+      <span class="bar b3"></span>
+      <span class="bar b4"></span>
+    </div>
+  </div>
+
+  <div class="music-body-wrap">
+    <div class="music-meta-top">
+      <div class="music-text-info">
+        <strong class="music-track-title">All the Stars</strong>
+        <span class="music-artist-name">Kendrick Lamar &amp; SZA</span>
+      </div>
+      <div class="music-meta-badges">
+        <button type="button" id="musicLoopToggleBtn" class="music-loop-badge active" title="Toggle Loop (Currently: Loop ON)">
+          🔁 LOOP ON
+        </button>
+        <button type="button" id="musicDockMinBtn" class="music-dock-min-btn" title="Minimize / Expand Player">
+          −
+        </button>
+      </div>
+    </div>
+
+    <!-- Timeline Scrubber -->
+    <div class="music-timeline-row">
+      <span id="musicTimeCur" class="music-time-tag">0:00</span>
+      <div class="music-progress-bar-wrap" id="musicProgressWrap" title="Click to seek">
+        <div class="music-progress-fill" id="musicProgressFill"></div>
+      </div>
+      <span id="musicTimeTotal" class="music-time-tag">3:52</span>
+    </div>
+
+    <!-- Playback Controls & Volume -->
+    <div class="music-controls-row">
+      <div class="music-btn-group">
+        <button type="button" id="musicPlayBtn" class="btn-music-ctrl play-btn" title="Play / Pause All the Stars">
+          ▶ Play
+        </button>
+        <button type="button" id="musicRestartBtn" class="btn-music-ctrl icon-btn" title="Restart Song">
+          ⏮
+        </button>
+      </div>
+      <div class="music-volume-group">
+        <button type="button" id="musicMuteBtn" class="btn-music-ctrl icon-btn vol-btn" title="Mute / Unmute">
+          🔊
+        </button>
+        <input type="range" id="musicVolumeSlider" min="0" max="1" step="0.01" value="0.65" class="music-vol-slider" title="Volume Slider">
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Core Engines & App Controller -->
 <script src="zip.js"></script>

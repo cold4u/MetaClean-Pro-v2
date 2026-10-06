@@ -2533,6 +2533,264 @@
   applyCrtFx();
   applyArcadeMute();
 
+  // ============================================================================
+  // Background Audio Controller: "All the Stars" (Kendrick Lamar & SZA)
+  // Continuous Loop Playback, Scrubber, Vinyl Animation & Telemetry
+  // ============================================================================
+  const bgMusicAudio = $("#bgMusicAudio");
+  const headerMusicBtn = $("#headerMusicBtn");
+  const headerMusicLabel = $("#headerMusicLabel");
+  const cyberMusicDock = $("#cyberMusicDock");
+  const musicDiscWrap = $("#musicDiscWrap");
+  const musicPlayBtn = $("#musicPlayBtn");
+  const musicRestartBtn = $("#musicRestartBtn");
+  const musicLoopToggleBtn = $("#musicLoopToggleBtn");
+  const musicDockMinBtn = $("#musicDockMinBtn");
+  const musicMuteBtn = $("#musicMuteBtn");
+  const musicVolumeSlider = $("#musicVolumeSlider");
+  const musicProgressWrap = $("#musicProgressWrap");
+  const musicProgressFill = $("#musicProgressFill");
+  const musicTimeCur = $("#musicTimeCur");
+  const musicTimeTotal = $("#musicTimeTotal");
+
+  let isMusicPlaying = false;
+  let isMusicLooping = true; // Always default to loop active as requested
+  let isDockMinimized = false;
+  let userExplicitPaused = false;
+  let prevVolume = 0.65;
+
+  // Restore stored preferences
+  try {
+    const savedVol = localStorage.getItem('metaclean_music_vol');
+    if (savedVol !== null) {
+      prevVolume = parseFloat(savedVol);
+      if (musicVolumeSlider) musicVolumeSlider.value = prevVolume;
+    }
+    const savedLoop = localStorage.getItem('metaclean_music_loop');
+    if (savedLoop !== null) {
+      isMusicLooping = savedLoop === 'true';
+    }
+    const savedMin = localStorage.getItem('metaclean_music_min');
+    if (savedMin === 'true') {
+      isDockMinimized = true;
+      if (cyberMusicDock) cyberMusicDock.classList.add('minimized');
+    }
+  } catch (_) {}
+
+  function formatTime(seconds) {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }
+
+  function updateMusicUI(playing) {
+    isMusicPlaying = !!playing;
+    if (headerMusicBtn) {
+      headerMusicBtn.classList.toggle('playing', isMusicPlaying);
+      if (headerMusicLabel) {
+        headerMusicLabel.textContent = isMusicPlaying ? '✨ All the Stars [Playing]' : '🎵 All the Stars';
+      }
+    }
+    if (cyberMusicDock) {
+      cyberMusicDock.classList.toggle('playing', isMusicPlaying);
+    }
+    if (musicPlayBtn) {
+      musicPlayBtn.textContent = isMusicPlaying ? '⏸ Pause' : '▶ Play';
+      musicPlayBtn.title = isMusicPlaying ? 'Pause "All the Stars"' : 'Play "All the Stars"';
+    }
+    updateLoopButtonUI();
+  }
+
+  function updateLoopButtonUI() {
+    if (musicLoopToggleBtn) {
+      musicLoopToggleBtn.classList.toggle('active', isMusicLooping);
+      musicLoopToggleBtn.classList.toggle('inactive', !isMusicLooping);
+      musicLoopToggleBtn.textContent = isMusicLooping ? '🔁 LOOP ON' : '➡️ LOOP OFF';
+      musicLoopToggleBtn.title = isMusicLooping ? 'Loop is Active (Click to disable)' : 'Loop is Off (Click to enable)';
+    }
+  }
+
+  function playMusic() {
+    if (!bgMusicAudio) return;
+    userExplicitPaused = false;
+    bgMusicAudio.volume = parseFloat(musicVolumeSlider ? musicVolumeSlider.value : prevVolume);
+    bgMusicAudio.loop = isMusicLooping;
+    bgMusicAudio.play().then(() => {
+      updateMusicUI(true);
+    }).catch(err => {
+      console.warn('Autoplay prevented by browser, waiting for user gesture:', err);
+    });
+  }
+
+  function pauseMusic() {
+    if (!bgMusicAudio) return;
+    userExplicitPaused = true;
+    bgMusicAudio.pause();
+    updateMusicUI(false);
+  }
+
+  function toggleMusicPlayback() {
+    if (isMusicPlaying) {
+      pauseMusic();
+    } else {
+      playMusic();
+    }
+  }
+
+  function toggleMusicLoop() {
+    isMusicLooping = !isMusicLooping;
+    if (bgMusicAudio) bgMusicAudio.loop = isMusicLooping;
+    try {
+      localStorage.setItem('metaclean_music_loop', String(isMusicLooping));
+    } catch (_) {}
+    updateLoopButtonUI();
+  }
+
+  function toggleMusicDockMin() {
+    isDockMinimized = !isDockMinimized;
+    if (cyberMusicDock) cyberMusicDock.classList.toggle('minimized', isDockMinimized);
+    try {
+      localStorage.setItem('metaclean_music_min', String(isDockMinimized));
+    } catch (_) {}
+  }
+
+  // Setup bgMusicAudio events
+  if (bgMusicAudio) {
+    bgMusicAudio.loop = isMusicLooping;
+    bgMusicAudio.volume = prevVolume;
+
+    bgMusicAudio.addEventListener('play', () => updateMusicUI(true));
+    bgMusicAudio.addEventListener('pause', () => updateMusicUI(false));
+
+    bgMusicAudio.addEventListener('ended', () => {
+      if (isMusicLooping) {
+        bgMusicAudio.currentTime = 0;
+        bgMusicAudio.play().catch(() => {});
+      } else {
+        updateMusicUI(false);
+      }
+    });
+
+    bgMusicAudio.addEventListener('timeupdate', () => {
+      if (!bgMusicAudio.duration) return;
+      const cur = bgMusicAudio.currentTime;
+      const total = bgMusicAudio.duration;
+      if (musicTimeCur) musicTimeCur.textContent = formatTime(cur);
+      if (musicTimeTotal && !isNaN(total)) musicTimeTotal.textContent = formatTime(total);
+      if (musicProgressFill) {
+        const pct = (cur / total) * 100;
+        musicProgressFill.style.width = `${pct}%`;
+      }
+    });
+
+    bgMusicAudio.addEventListener('loadedmetadata', () => {
+      if (musicTimeTotal && !isNaN(bgMusicAudio.duration)) {
+        musicTimeTotal.textContent = formatTime(bgMusicAudio.duration);
+      }
+    });
+  }
+
+  // Seek Scrubber
+  if (musicProgressWrap && bgMusicAudio) {
+    musicProgressWrap.addEventListener('click', e => {
+      const rect = musicProgressWrap.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, clickX / rect.width));
+      if (bgMusicAudio.duration) {
+        bgMusicAudio.currentTime = pct * bgMusicAudio.duration;
+        if (!isMusicPlaying && !userExplicitPaused) {
+          playMusic();
+        }
+      }
+    });
+  }
+
+  // Volume Slider & Mute Button
+  if (musicVolumeSlider && bgMusicAudio) {
+    musicVolumeSlider.addEventListener('input', e => {
+      const val = parseFloat(e.target.value);
+      bgMusicAudio.volume = val;
+      if (val > 0) prevVolume = val;
+      if (musicMuteBtn) musicMuteBtn.textContent = val === 0 ? '🔇' : (val < 0.5 ? '🔉' : '🔊');
+      try {
+        localStorage.setItem('metaclean_music_vol', String(val));
+      } catch (_) {}
+    });
+  }
+
+  if (musicMuteBtn && bgMusicAudio) {
+    musicMuteBtn.addEventListener('click', () => {
+      if (bgMusicAudio.volume > 0) {
+        prevVolume = bgMusicAudio.volume;
+        bgMusicAudio.volume = 0;
+        if (musicVolumeSlider) musicVolumeSlider.value = 0;
+        musicMuteBtn.textContent = '🔇';
+      } else {
+        const restore = prevVolume > 0 ? prevVolume : 0.65;
+        bgMusicAudio.volume = restore;
+        if (musicVolumeSlider) musicVolumeSlider.value = restore;
+        musicMuteBtn.textContent = restore < 0.5 ? '🔉' : '🔊';
+      }
+    });
+  }
+
+  // Button Listeners
+  if (headerMusicBtn) headerMusicBtn.addEventListener('click', () => {
+    if (isDockMinimized) toggleMusicDockMin();
+    toggleMusicPlayback();
+  });
+
+  if (musicPlayBtn) musicPlayBtn.addEventListener('click', toggleMusicPlayback);
+
+  if (musicRestartBtn && bgMusicAudio) {
+    musicRestartBtn.addEventListener('click', () => {
+      bgMusicAudio.currentTime = 0;
+      playMusic();
+    });
+  }
+
+  if (musicLoopToggleBtn) musicLoopToggleBtn.addEventListener('click', toggleMusicLoop);
+  if (musicDockMinBtn) musicDockMinBtn.addEventListener('click', toggleMusicDockMin);
+  if (musicDiscWrap) {
+    musicDiscWrap.addEventListener('click', () => {
+      if (isDockMinimized) {
+        toggleMusicDockMin();
+      } else {
+        toggleMusicPlayback();
+      }
+    });
+  }
+
+  // Autoplay handler: Attempt immediate play; if browser blocks without gesture, start upon first interaction
+  function initAutoplay() {
+    if (userExplicitPaused || !bgMusicAudio) return;
+    bgMusicAudio.play().then(() => {
+      updateMusicUI(true);
+    }).catch(() => {
+      const handleFirstInteraction = () => {
+        if (!userExplicitPaused && !isMusicPlaying) {
+          playMusic();
+        }
+        window.removeEventListener('click', handleFirstInteraction);
+        window.removeEventListener('keydown', handleFirstInteraction);
+        window.removeEventListener('touchstart', handleFirstInteraction);
+      };
+      window.addEventListener('click', handleFirstInteraction, { once: true, passive: true });
+      window.addEventListener('keydown', handleFirstInteraction, { once: true, passive: true });
+      window.addEventListener('touchstart', handleFirstInteraction, { once: true, passive: true });
+    });
+  }
+
+  initAutoplay();
+  updateLoopButtonUI();
+
+  // Global methods
+  window.playMusic = playMusic;
+  window.pauseMusic = pauseMusic;
+  window.toggleMusicPlayback = toggleMusicPlayback;
+  window.toggleMusicLoop = toggleMusicLoop;
+
   // ── Offline PWA Service Worker & Install Prompt ──
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
